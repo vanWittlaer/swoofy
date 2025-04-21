@@ -1,0 +1,8 @@
+/.idea/
+
+/*.sql.gz
+/*.tar.gz
+/*.sql
+.DS_Store
+.history/*
+.vscode/*

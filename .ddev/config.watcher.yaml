@@ -1,0 +1,19 @@
+web_environment:
+  - HOST=0.0.0.0
+  - PORT=9997
+  - DISABLE_ADMIN_COMPILATION_TYPECHECK=1
+  - PROXY_URL=${DDEV_PRIMARY_URL}:9998
+  - STOREFRONT_SKIP_SSL_CERT=true
+web_extra_exposed_ports:
+  - name: admin-proxy
+    container_port: 9997
+    http_port: 8887
+    https_port: 9997
+  - name: storefront-proxy
+    container_port: 9998
+    http_port: 8888
+    https_port: 9998
+  - name: storefront-assets
+    container_port: 9999
+    http_port: 8889
+    https_port: 9999
