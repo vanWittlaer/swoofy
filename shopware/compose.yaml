@@ -1,0 +1,38 @@
+
+services:
+###> shopware/core ###
+  database:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: shopware
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_USER: shopware
+      MARIADB_PASSWORD: shopware
+    volumes:
+      - db-data:/var/lib/mysql:rw
+    healthcheck:
+      test: [ "CMD", "mariadb-admin" ,"ping", "-h", "localhost", "-proot" ]
+      start_interval: 3s
+      interval: 5s
+      timeout: 1s
+      retries: 10
+###< shopware/core ###
+
+###> shopware/elasticsearch ###
+  opensearch:
+    image: opensearchproject/opensearch:2
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: 'true'
+###< shopware/elasticsearch ###
+
+volumes:
+###> shopware/core ###
+  db-data:
+###< shopware/core ###
+
+###> shopware/elasticsearch ###
+  opensearch-data:
+###< shopware/elasticsearch ###

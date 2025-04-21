@@ -1,0 +1,67 @@
+default:
+    image: docker:27.5.1
+    services:
+        - docker:27.5.1-dind
+
+variables:
+    # for a public runner, you may need to use "tcp://docker:2376" instead
+    # DOCKER_HOST: "tcp://docker:2376"
+    DOCKER_HOST: "unix:///runner/services/docker/docker.sock"
+    DOCKER_TLS_CERTDIR: "/certs"
+
+stages:
+    - build
+    - deploy
+
+build_staging:
+    environment:
+        name: stage
+    stage: build
+    when: manual
+    only:
+        - develop
+        - /^feature.*$/
+    script: &build
+        - export REPO_NAME="${DOCKERHUB_REPO}/${CI_ENVIRONMENT_NAME}"
+        - echo "$DOCKERHUB_PASSWORD" | docker login registry.gitlab.com --username "$DOCKERHUB_USERNAME" --password-stdin
+        - docker build
+            --no-cache
+            -f shopware/docker/Dockerfile
+            -t ${REPO_NAME}:latest
+            --build-arg SHOPWARE_PACKAGES_TOKEN="${BEARER_PACKAGES_SHOPWARE}"
+            --build-arg SHOPWARE_CLI_FORCE_BUN=1
+            shopware
+        - docker push ${REPO_NAME}:latest
+
+build_production:
+    environment:
+        name: prod
+    stage: build
+    when: manual
+    only:
+        - main
+    script: *build
+
+deploy_staging:
+    environment:
+        name: stage
+    stage: deploy
+    when: manual
+    only:
+        - develop
+    image: alpine/curl
+    services: []
+    script: &deploy
+        - curl -X GET --location "${COOLIFY_DEPLOY_URL}?uuid=${COOLIFY_DEPLOY_UUID}&force=true"
+            -H "Authorization:Bearer $COOLIFY_API_TOKEN" -H "Accept:application/json"
+
+deploy_production:
+    environment:
+        name: prod
+    stage: deploy
+    when: manual
+    only:
+        - main
+    image: alpine/curl
+    services: []
+    script: *deploy

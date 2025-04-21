@@ -1,0 +1,26 @@
+services:
+    shell:
+        build:
+            context: .
+            dockerfile: docker/shell/Dockerfile
+        volumes:
+            - type: bind
+              source: ${SERVER_VOLUME}/.env.local
+              target: /var/www/html/.env.local
+              read_only: true
+            - type: bind
+              source: ${SERVER_VOLUME}/files
+              target: /var/www/html/files
+              read_only: true
+            - type: bind
+              source: ${SERVER_VOLUME}/public/media
+              target: /var/www/html/public/media
+              read_only: true
+            - type: bind
+              source: ${SERVER_VOLUME}/public/thumbnail
+              target: /var/www/html/public/thumbnail
+              read_only: true
+            - type: bind
+              source: ${BACKUP_VOLUME}
+              target: /var/backup
+        command: [ "tail", "-f", "/dev/null" ]

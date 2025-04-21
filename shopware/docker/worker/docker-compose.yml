@@ -1,0 +1,32 @@
+services:
+    worker-1: &worker
+        image: $APP_IMAGE:latest
+        restart: unless-stopped
+        volumes: &volumes
+            -   type: bind
+                source: ${SERVER_VOLUME}/.env.local
+                target: /var/www/html/.env.local
+            -   type: bind
+                source: ${SERVER_VOLUME}/files
+                target: /var/www/html/files
+            -   type: bind
+                source: ${SERVER_VOLUME}/public/media
+                target: /var/www/html/public/media
+            -   type: bind
+                source: ${SERVER_VOLUME}/public/theme
+                target: /var/www/html/public/theme
+            -   type: bind
+                source: ${SERVER_VOLUME}/public/sitemap
+                target: /var/www/html/public/sitemap
+            -   type: bind
+                source: ${SERVER_VOLUME}/public/thumbnail
+                target: /var/www/html/public/thumbnail
+        entrypoint: [ "php", "bin/console", "messenger:consume", "async", "low_priority", "--time-limit=300", "--memory-limit=512M" ]
+    worker-2: *worker
+
+    scheduler:
+        image: $APP_IMAGE:latest
+        restart: unless-stopped
+        volumes: *volumes
+        entrypoint: [ "php", "bin/console", "scheduled-task:run" ]
+

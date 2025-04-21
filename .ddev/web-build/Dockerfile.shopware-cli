@@ -1,0 +1,1 @@
+COPY --from=shopware/shopware-cli:bin /shopware-cli /usr/local/bin/shopware-cli
