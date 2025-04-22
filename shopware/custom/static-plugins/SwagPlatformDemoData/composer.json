@@ -1,0 +1,60 @@
+{
+    "name": "swag/demo-data",
+    "description": "Plugin including demo data",
+    "version": "2.1.0",
+    "type": "shopware-platform-plugin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "shopware AG"
+        }
+    ],
+    "require": {
+        "shopware/core": "~6.6.0 || ~6.7.0"
+    },
+    "extra": {
+        "shopware-plugin-class": "Swag\\PlatformDemoData\\SwagPlatformDemoData",
+        "plugin-icon": "src/Resources/config/plugin.png",
+        "copyright": "(c) by shopware AG",
+        "label": {
+            "de-DE": "Shopware 6 Demodaten",
+            "en-GB": "Shopware 6 Demo data"
+        },
+        "description": {
+            "de-DE": "Demodaten Plugin für Shopware 6. Nicht in Produktiv-Umgebungen nutzen! Die Daten werden beim Aktivieren des Plugins importiert und überschreiben bestehende Daten.",
+            "en-GB": "Demo data plugin for Shopware 6. Do not use in production environments! The data is imported on plugin activation and it will overwritten existing data."
+        },
+        "manufacturerLink": {
+            "de-DE": "https://store.shopware.com/de/extension-partners/shopware-ag",
+            "en-GB": "https://store.shopware.com/en/extension-partners/shopware-ag"
+        },
+        "supportLink": {
+            "de-DE": "https://docs.shopware.com/de",
+            "en-GB": "https://docs.shopware.com/en"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Swag\\PlatformDemoData\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Swag\\PlatformDemoData\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "cs": "../../../vendor/bin/php-cs-fixer fix --dry-run",
+        "cs-fix": "../../../vendor/bin/php-cs-fixer fix",
+        "phpstan": [
+            "php ../../../src/Core/DevOps/StaticAnalyze/phpstan-bootstrap.php",
+            "php bin/phpstan-config-generator.php",
+            "../../../vendor/bin/phpstan analyze"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true
+        }
+    }
+}
