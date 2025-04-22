@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d15f2d20219faed37f050701086176a0",
+    "content-hash": "20c6d2e674e3651c54338d246c3d8ba4",
     "packages": [
         {
             "name": "async-aws/core",
@@ -6160,6 +6160,76 @@
                 "source": "https://github.com/squirrelphp/twig-php-syntax/tree/v1.10"
             },
             "time": "2025-01-30T09:47:03+00:00"
+        },
+        {
+            "name": "swag/demo-data",
+            "version": "2.1.0",
+            "dist": {
+                "type": "path",
+                "url": "custom/static-plugins/SwagPlatformDemoData",
+                "reference": "af7adb92a072b4e34975750ebe1df7d260ee83d0"
+            },
+            "require": {
+                "shopware/core": "~6.6.0 || ~6.7.0"
+            },
+            "type": "shopware-platform-plugin",
+            "extra": {
+                "shopware-plugin-class": "Swag\\PlatformDemoData\\SwagPlatformDemoData",
+                "plugin-icon": "src/Resources/config/plugin.png",
+                "copyright": "(c) by shopware AG",
+                "label": {
+                    "de-DE": "Shopware 6 Demodaten",
+                    "en-GB": "Shopware 6 Demo data"
+                },
+                "description": {
+                    "de-DE": "Demodaten Plugin für Shopware 6. Nicht in Produktiv-Umgebungen nutzen! Die Daten werden beim Aktivieren des Plugins importiert und überschreiben bestehende Daten.",
+                    "en-GB": "Demo data plugin for Shopware 6. Do not use in production environments! The data is imported on plugin activation and it will overwritten existing data."
+                },
+                "manufacturerLink": {
+                    "de-DE": "https://store.shopware.com/de/extension-partners/shopware-ag",
+                    "en-GB": "https://store.shopware.com/en/extension-partners/shopware-ag"
+                },
+                "supportLink": {
+                    "de-DE": "https://docs.shopware.com/de",
+                    "en-GB": "https://docs.shopware.com/en"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Swag\\PlatformDemoData\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Swag\\PlatformDemoData\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "cs": [
+                    "../../../vendor/bin/php-cs-fixer fix --dry-run"
+                ],
+                "cs-fix": [
+                    "../../../vendor/bin/php-cs-fixer fix"
+                ],
+                "phpstan": [
+                    "php ../../../src/Core/DevOps/StaticAnalyze/phpstan-bootstrap.php",
+                    "php bin/phpstan-config-generator.php",
+                    "../../../vendor/bin/phpstan analyze"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "shopware AG"
+                }
+            ],
+            "description": "Plugin including demo data",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
         },
         {
             "name": "symfony/amqp-messenger",

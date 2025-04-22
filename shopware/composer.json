@@ -10,6 +10,7 @@
     "shopware/docker": "^0.2.0",
     "shopware/elasticsearch": "*",
     "shopware/storefront": "*",
+    "swag/demo-data": "^2.1",
     "symfony/amqp-messenger": "^7.2",
     "symfony/flex": "~2"
   },
