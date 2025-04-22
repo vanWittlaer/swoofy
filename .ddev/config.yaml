@@ -15,6 +15,7 @@ use_dns_when_possible: true
 composer_root: shopware
 composer_version: "2"
 disable_settings_management: true
+webimage_extra_packages: [ php8.3-amqp ]
 web_environment:
     - APP_ENV=dev
 corepack_enable: false
