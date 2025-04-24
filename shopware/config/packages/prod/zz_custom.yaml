@@ -1,0 +1,7 @@
+shopware:
+    cache:
+        cache_compression: true
+        cache_compression_method: 'zstd'
+    cart:
+        compress: true
+        compression_method: zstd
