@@ -5,7 +5,7 @@ This repository provides a simple though fully working example
 for a self-hosted Shopware 6 instance using Coolify as a self-hosted 
 PaaS.
 
-This simple setup stores all media files on the local filesystem.
+Note this simple setup stores all media files on the local filesystem.
 This is not recommended for production. Instead, S3 should be used
 for these.
 
@@ -40,8 +40,8 @@ to clone your media files from the server to your local installation.
 
 # Preparation for Coolify
 ## shopware/docker
-The Coolify works with a Docker container that is created based
-on Shopware's shopware/docker project. To install it locally,
+Coolify works with a Docker container that is created based
+on Shopware's shopware/docker project. To install shopware/docker
 run this command inside your ddev web container:
 
 `composer require shopware/docker`
@@ -125,7 +125,7 @@ and some other useful tools like mysqldump.
 I have successfully tested with `mysql:8.0.40-debian`. 
 (Note the debian flavour comes with the `mysqlbinlog` command installed.)
 #### Ports Mappings
-`4306:3306` only needed if you plan to ssh-tunnel to the database
+`4306:3306` only needed if you plan to ssh-tunnel to the database, leave it unfilled otherwise.
 #### Custom Mysql Configuration
 ```text
 [mysqld]
