@@ -104,7 +104,17 @@ APP_SECRET=<your app secret>
 ```
 ## Resources
 ### webserver
+To execute the post-deployment tasks (like plugin updates, theme compile, migrations etc.) add this to the 
+post-deployment command:
+
+`vendor/bin/shopware-deployment-helper run --skip-theme-compile -n`
 ### worker
+On shutdown/redeploy, the workers need to be cooled down carefully. Add this script `shopware/bin/docker-shutdown.sh` to
+the custom build command for the workers:
+
+`docker compose -f ./shopware/docker/worker/docker-compose.yml build && ./shopware/bin/docker-shutdown.sh <worker-resource-uuid`
+
+This script takes the UUID of your worker resource as an input.
 ### bash shell (optional)
 The Shopware provided container does, on purpose, not contain bash.
 However bash might be needed or desired to run e.g. backup scripts.
