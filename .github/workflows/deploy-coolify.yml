@@ -1,0 +1,18 @@
+name: Deploy to Coolify
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Deploy to ${{ inputs.environment }}
+        run: |
+          curl -X GET --location "${{ secrets.COOLIFY_DEPLOY_URL }}?uuid=${{ secrets.COOLIFY_DEPLOY_UUID }}&force=true" \
+            -H "Authorization:Bearer ${{ secrets.COOLIFY_API_TOKEN }}" -H "Accept:application/json" 
