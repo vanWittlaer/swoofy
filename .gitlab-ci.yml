@@ -13,6 +13,22 @@ stages:
     - build
     - deploy
 
+.build_script: &build
+    - export REPO_NAME="${DOCKERHUB_REPO}/${CI_ENVIRONMENT_NAME}"
+    - echo "$DOCKERHUB_PASSWORD" | docker login registry.gitlab.com --username "$DOCKERHUB_USERNAME" --password-stdin
+    - docker build
+        --no-cache
+        -f shopware/docker/Dockerfile
+        -t ${REPO_NAME}:latest
+        --build-arg SHOPWARE_PACKAGES_TOKEN="${BEARER_PACKAGES_SHOPWARE}"
+        --build-arg SHOPWARE_CLI_FORCE_BUN=1
+        shopware
+    - docker push ${REPO_NAME}:latest
+
+.deploy_script: &deploy
+    - curl -X GET --location "${COOLIFY_DEPLOY_URL}?uuid=${COOLIFY_DEPLOY_UUID}&force=true"
+        -H "Authorization:Bearer $COOLIFY_API_TOKEN" -H "Accept:application/json"
+
 build_staging:
     environment:
         name: stage
@@ -21,17 +37,7 @@ build_staging:
     only:
         - develop
         - /^feature.*$/
-    script: &build
-        - export REPO_NAME="${DOCKERHUB_REPO}/${CI_ENVIRONMENT_NAME}"
-        - echo "$DOCKERHUB_PASSWORD" | docker login registry.gitlab.com --username "$DOCKERHUB_USERNAME" --password-stdin
-        - docker build
-            --no-cache
-            -f shopware/docker/Dockerfile
-            -t ${REPO_NAME}:latest
-            --build-arg SHOPWARE_PACKAGES_TOKEN="${BEARER_PACKAGES_SHOPWARE}"
-            --build-arg SHOPWARE_CLI_FORCE_BUN=1
-            shopware
-        - docker push ${REPO_NAME}:latest
+    script: *build
 
 build_production:
     environment:
@@ -51,9 +57,7 @@ deploy_staging:
         - develop
     image: alpine/curl
     services: []
-    script: &deploy
-        - curl -X GET --location "${COOLIFY_DEPLOY_URL}?uuid=${COOLIFY_DEPLOY_UUID}&force=true"
-            -H "Authorization:Bearer $COOLIFY_API_TOKEN" -H "Accept:application/json"
+    script: *deploy
 
 deploy_production:
     environment:
