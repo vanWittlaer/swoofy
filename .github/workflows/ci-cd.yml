@@ -1,0 +1,40 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+  workflow_dispatch:
+
+jobs:
+  build_staging:
+    if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature')
+    uses: ./.github/workflows/build-docker.yml
+    with:
+      environment: stage
+    secrets:
+      BEARER_PACKAGES_SHOPWARE: ${{ secrets.BEARER_PACKAGES_SHOPWARE }}
+
+  build_production:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/build-docker.yml
+    with:
+      environment: prod
+    secrets:
+      BEARER_PACKAGES_SHOPWARE: ${{ secrets.BEARER_PACKAGES_SHOPWARE }}
+
+  deploy_staging:
+    if: github.ref == 'refs/heads/develop'
+    needs: build_staging
+    uses: ./.github/workflows/deploy-coolify.yml
+    with:
+      environment: stage
+
+  deploy_production:
+    if: github.ref == 'refs/heads/main'
+    needs: build_production
+    uses: ./.github/workflows/deploy-coolify.yml
+    with:
+      environment: prod 
