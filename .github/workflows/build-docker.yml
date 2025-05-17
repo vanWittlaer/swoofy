@@ -30,7 +30,7 @@ jobs:
           context: ./shopware
           file: ./shopware/docker/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ inputs.environment }}
+          tags: ghcr.io/${{ github.repository_owner }}.toLowerCase()/${{ github.event.repository.name }}.toLowerCase():${{ inputs.environment }}
           build-args: |
             SHOPWARE_PACKAGES_TOKEN=${{ secrets.BEARER_PACKAGES_SHOPWARE }}
             SHOPWARE_CLI_FORCE_BUN=1 
