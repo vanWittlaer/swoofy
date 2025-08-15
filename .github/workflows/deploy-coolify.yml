@@ -6,6 +6,9 @@ on:
       environment:
         required: true
         type: string
+    secrets:
+      COOLIFY_API_TOKEN:
+        required: true
 
 jobs:
   deploy:
@@ -14,5 +17,5 @@ jobs:
     steps:
       - name: Deploy to ${{ inputs.environment }}
         run: |
-          curl -X GET --location "${{ secrets.COOLIFY_DEPLOY_URL }}?uuid=${{ secrets.COOLIFY_DEPLOY_UUID }}&force=true" \
-            -H "Authorization:Bearer ${{ secrets.COOLIFY_API_TOKEN }}" -H "Accept:application/json" 
+          curl -X GET --location "${{ vars.COOLIFY_DEPLOY_URL }}?uuid=${{ vars.COOLIFY_DEPLOY_UUID }}&force=true" \
+            -H "Authorization:Bearer ${{ secrets.COOLIFY_API_TOKEN }}" -H "Accept:application/json"
