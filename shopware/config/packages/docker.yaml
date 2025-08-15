@@ -1,7 +1,4 @@
 shopware:
-    api:                                                                                                               
-        jwt_key:                                                                                                       
-            use_app_secret: true
     auto_update:
         enabled: false
     store:

@@ -1,4 +1,13 @@
 {
+    "doctrine/deprecations": {
+        "version": "1.1",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "87424683adc81d7dc305eefec1fced883084aab9"
+        }
+    },
     "nyholm/psr7": {
         "version": "1.8",
         "recipe": {
@@ -111,6 +120,15 @@
             "bin/build-storefront.sh",
             "bin/watch-storefront.sh"
         ]
+    },
+    "symfony/amqp-messenger": {
+        "version": "7.2",
+        "recipe": {
+            "repo": "github.com/shopware/recipes",
+            "branch": "main",
+            "version": "5.4",
+            "ref": "7523c4867019bdcc3b333655e02211ce706a4868"
+        }
     },
     "symfony/console": {
         "version": "7.2",
