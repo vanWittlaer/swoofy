@@ -30,26 +30,27 @@
         }
     },
     "phpunit/phpunit": {
-        "version": "12.1",
+        "version": "12.3",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
-            "version": "10.0",
-            "ref": "bb22cf8d8c554a623b427d5f3416b538f5525233"
+            "version": "11.1",
+            "ref": "c6658a60fc9d594805370eacdf542c3d6b5c0869"
         },
         "files": [
             ".env.test",
             "phpunit.dist.xml",
-            "tests/bootstrap.php"
+            "tests/bootstrap.php",
+            "bin/phpunit"
         ]
     },
     "shopware/administration": {
-        "version": "6.6",
+        "version": "6.7",
         "recipe": {
             "repo": "github.com/shopware/recipes",
             "branch": "main",
-            "version": "6.6",
-            "ref": "33e796478eb06c75b42f5e4ac110ce3bb9415ef7"
+            "version": "6.7",
+            "ref": "e37b40beddc01310e2107d8d4190ec7ebd7641b5"
         },
         "files": [
             "bin/build-administration.sh",
@@ -57,12 +58,12 @@
         ]
     },
     "shopware/core": {
-        "version": "6.6",
+        "version": "6.7",
         "recipe": {
             "repo": "github.com/shopware/recipes",
             "branch": "main",
-            "version": "6.6",
-            "ref": "606d7a3e58d44c4c0fa75204618a1b0b3203a3e0"
+            "version": "6.7",
+            "ref": "5109e5196b5da6d1de268d947e6010fac2f55dab"
         },
         "files": [
             "bin/.htaccess",
@@ -99,22 +100,22 @@
         ]
     },
     "shopware/elasticsearch": {
-        "version": "6.6",
+        "version": "6.7",
         "recipe": {
             "repo": "github.com/shopware/recipes",
             "branch": "main",
-            "version": "6.6",
-            "ref": "a1232aee197f337e95f347c204680dd788c54fcc"
+            "version": "6.7",
+            "ref": "fe34e39dbf21eec276589a9c8857084ea33918f9"
         },
         "files": []
     },
     "shopware/storefront": {
-        "version": "6.6",
+        "version": "6.7",
         "recipe": {
             "repo": "github.com/shopware/recipes",
             "branch": "main",
-            "version": "6.6",
-            "ref": "ce534fb928b5983ff86b6ff5975dc90b309f353f"
+            "version": "6.7",
+            "ref": "3cc053f53643096e38bd6301e50b81b29dd31127"
         },
         "files": [
             "bin/build-storefront.sh",
