@@ -18,10 +18,20 @@ eval "$curenv"
 set +o allexport
 
 export HOST=${HOST:-"localhost"}
-export ESLINT_DISABLE
-export PORT
+export VITE_HOST
+export ADMIN_PORT
 export APP_URL
-export DISABLE_ADMIN_COMPILATION_TYPECHECK=1
+export SHOPWARE_ADMIN_SKIP_SOURCEMAP_GENERATION
+export DISABLE_DEVSERVER_OPEN
+export DDEV_PRIMARY_URL
+
+if [[ -e "${PROJECT_ROOT}/vendor/shopware/platform" ]]; then
+    ADMIN_ROOT="${ADMIN_ROOT:-"${PROJECT_ROOT}/vendor/shopware/platform/src/Administration"}"
+else
+    ADMIN_ROOT="${ADMIN_ROOT:-"${PROJECT_ROOT}/vendor/shopware/administration"}"
+fi
+
+export ADMIN_ROOT
 
 BIN_TOOL="${CWD}/console"
 
@@ -48,7 +58,7 @@ if [[ $(command -v jq) ]]; then
         if [[ -f "$path/package.json" && ! -d "$path/node_modules" && $name != "administration" ]]; then
             echo "=> Installing npm dependencies for ${name}"
 
-            npm install --prefix "$path"
+            (cd "$path" && npm install --omit=dev)
         fi
     done
     cd "$OLDPWD" || exit
@@ -56,9 +66,7 @@ else
     echo "Cannot check extensions for required npm installations as jq is not installed"
 fi
 
-if [ ! -d vendor/shopware/administration/Resources/app/administration/node_modules/webpack-dev-server ]; then
-    npm install --prefix vendor/shopware/administration/Resources/app/administration/
-fi
+(cd "${ADMIN_ROOT}"/Resources/app/administration && npm install --prefer-offline)
 
 # Dump entity schema
 if [[ -z "${SHOPWARE_SKIP_ENTITY_SCHEMA_DUMP:-""}" ]] && [[ -f "${ADMIN_ROOT}"/Resources/app/administration/scripts/entitySchemaConverter/entity-schema-converter.ts ]]; then
@@ -67,4 +75,4 @@ if [[ -z "${SHOPWARE_SKIP_ENTITY_SCHEMA_DUMP:-""}" ]] && [[ -f "${ADMIN_ROOT}"/R
   (cd "${ADMIN_ROOT}"/Resources/app/administration && npm run convert-entity-schema)
 fi
 
-npm run --prefix vendor/shopware/administration/Resources/app/administration/ dev
+(cd "${ADMIN_ROOT}"/Resources/app/administration && npm run dev)

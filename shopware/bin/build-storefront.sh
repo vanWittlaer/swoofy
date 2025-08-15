@@ -34,9 +34,11 @@ fi
 if [[ $(command -v jq) ]]; then
     OLDPWD=$(pwd)
     cd "$PROJECT_ROOT" || exit
+    basePaths=()
 
-    jq -c '.[]' "var/plugins.json" | while read -r config; do
+    while read -r config; do
         srcPath=$(echo "$config" | jq -r '(.basePath + .storefront.path)')
+        basePath=$(echo "$config" | jq -r '.basePath')
 
         # the package.json files are always one upper
         path=$(dirname "$srcPath")
@@ -48,18 +50,35 @@ if [[ $(command -v jq) ]]; then
             continue
         fi
 
+        if [[ -n $srcPath && ! " ${basePaths[@]} " =~ " ${basePath} " ]]; then
+            basePaths+=("$basePath")
+        fi
+
         if [[ -f "$path/package.json" && ! -d "$path/node_modules" && $name != "storefront" ]]; then
             echo "=> Installing npm dependencies for ${name}"
 
-            npm install --prefix "$path" --prefer-offline
+            (cd "$path" && npm install --prefer-offline)
+        fi
+    done < <(jq -c '.[]' "var/plugins.json")
+
+    for basePath in "${basePaths[@]}"; do
+        if [[ -r "${basePath}/package.json" ]]; then
+            echo "=> Installing npm dependencies for ${basePath}"
+            (cd "${basePath}" && npm ci --omit=dev --no-audit --prefer-offline)
+        fi
+
+        if [[ -r "${basePath}/../package.json" ]]; then
+            echo "=> Installing npm dependencies for ${basePath}/.."
+            (cd "${basePath}/.." && npm ci --omit=dev --no-audit --prefer-offline)
         fi
     done
+
     cd "$OLDPWD" || exit
 else
     echo "Cannot check extensions for required npm installations as jq is not installed"
 fi
 
-npm --prefix "${STOREFRONT_ROOT}"/Resources/app/storefront install --prefer-offline --production
+npm --prefix "${STOREFRONT_ROOT}"/Resources/app/storefront install --prefer-offline --omit=dev
 node "${STOREFRONT_ROOT}"/Resources/app/storefront/copy-to-vendor.js
 npm --prefix "${STOREFRONT_ROOT}"/Resources/app/storefront run production
 [[ ${SHOPWARE_SKIP_ASSET_COPY:-""} ]] ||"${BIN_TOOL}" assets:install
