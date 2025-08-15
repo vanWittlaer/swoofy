@@ -3,9 +3,9 @@
   "type": "project",
   "require": {
     "composer-runtime-api": "^2.0",
-    "frosh/tools": "^2.6",
+    "frosh/tools": "^3.1",
     "shopware/administration": "*",
-    "shopware/core": "v6.6.10.3",
+    "shopware/core": "~v6.7.1",
     "shopware/deployment-helper": "^0.0.19",
     "shopware/docker": "^0.2.0",
     "shopware/elasticsearch": "*",
@@ -66,14 +66,12 @@
   "extra": {
     "symfony": {
       "allow-contrib": true,
-      "endpoint": [
-        "https://raw.githubusercontent.com/shopware/recipes/flex/main/index.json",
-        "flex://defaults"
-      ]
+      "endpoint": ["https://raw.githubusercontent.com/shopware/recipes/flex/main/index.json", "flex://defaults"],
+      "docker": false
     }
   },
   "require-dev": {
-    "frosh/development-helper": "^2.0",
+    "frosh/development-helper": "^3.0",
     "shopware/dev-tools": "^1.5",
     "symfony/debug-bundle": "^7.2",
     "symfony/web-profiler-bundle": "^7.2"
