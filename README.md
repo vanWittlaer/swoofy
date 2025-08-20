@@ -38,6 +38,18 @@ server. Point it to your server
 (the one where you cloned the database from) and there is no need
 to clone your media files from the server to your local installation.
 
+### Setup without a database
+Run `ddev exec vendor/bin/shopware-deployment-helper run` to create
+an initial system. The default admin credentials are admin/shopware.
+
+### ddev Addons
+Regular DDEV addons have been added for Redis, RedisCommander, RabbitMQ 
+and ElasticSearch. 
+
+All addons follow their respective default configurations, 
+with the exception of Redis. Note the updated configuration in
+`.ddev/redis/redis.conf`.
+
 # Preparation for Coolify
 ## shopware/docker
 Coolify works with a Docker container that is created based
