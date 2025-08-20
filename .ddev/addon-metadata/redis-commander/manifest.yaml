@@ -1,0 +1,22 @@
+name: redis-commander
+repository: ddev/ddev-redis-commander
+version: v1.4.0
+dependencies:
+    - redis
+install_date: "2025-08-20T15:43:44+02:00"
+project_files:
+    - docker-compose.redis-commander.yaml
+    - docker-compose.redis-commander_norouter.yaml
+    - commands/host/redis-commander
+global_files: []
+removal_actions:
+    - |
+      #ddev-description:Remove docker-compose.redis-commander_password.yaml file
+      file=docker-compose.redis-commander_password.yaml
+      if [ -f "${file}" ]; then
+        if grep -q '#ddev-generated' "${file}"; then
+          rm -f "${file}"
+        else
+          echo "Unwilling to remove '$DDEV_APPROOT/.ddev/${file}' because it does not have #ddev-generated in it; you can manually delete it if it is safe to delete."
+        fi
+      fi
