@@ -16,7 +16,7 @@
 !/var/.htaccess
 /auth.json
 /install.lock
-public/asset-manifest.json
+/public/asset-manifest.json
 ###< shopware/core ###
 
 ###> phpunit/phpunit ###
