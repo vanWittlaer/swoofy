@@ -50,7 +50,7 @@
             "repo": "github.com/shopware/recipes",
             "branch": "main",
             "version": "6.7",
-            "ref": "e37b40beddc01310e2107d8d4190ec7ebd7641b5"
+            "ref": "baf82770e6bb9789af24c5af775810a48309e076"
         },
         "files": [
             "bin/build-administration.sh",
@@ -63,7 +63,7 @@
             "repo": "github.com/shopware/recipes",
             "branch": "main",
             "version": "6.7",
-            "ref": "5109e5196b5da6d1de268d947e6010fac2f55dab"
+            "ref": "469075e215817ebc0a52d1dcc77a60a226a2b312"
         },
         "files": [
             "bin/.htaccess",
@@ -90,7 +90,7 @@
             "repo": "github.com/shopware/recipes",
             "branch": "main",
             "version": "0.2",
-            "ref": "51e988003a0674f4ad6e413d7c4864e24ba28efb"
+            "ref": "a9275c6d67b58ea736d36646dd951a42aad78957"
         },
         "files": [
             "docker/Dockerfile",
@@ -115,7 +115,7 @@
             "repo": "github.com/shopware/recipes",
             "branch": "main",
             "version": "6.7",
-            "ref": "3cc053f53643096e38bd6301e50b81b29dd31127"
+            "ref": "13c5bb5ff2e8dde479bd0f4f398041d409864641"
         },
         "files": [
             "bin/build-storefront.sh",
@@ -216,6 +216,15 @@
         },
         "files": []
     },
+    "symfony/property-info": {
+        "version": "7.3",
+        "recipe": {
+            "repo": "github.com/shopware/recipes",
+            "branch": "main",
+            "version": "7.3",
+            "ref": "d7afb8d11ee0e18f644cc77c2df9b372e89cb3a9"
+        }
+    },
     "symfony/routing": {
         "version": "7.2",
         "recipe": {
@@ -266,12 +275,12 @@
         }
     },
     "symfony/web-profiler-bundle": {
-        "version": "7.2",
+        "version": "7.3",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
-            "version": "6.1",
-            "ref": "8b51135b84f4266e3b4c8a6dc23c9d1e32e543b7"
+            "version": "7.3",
+            "ref": "a363460c1b0b4a4d0242f2ce1a843ca0f6ac9026"
         },
         "files": [
             "config/packages/web_profiler.yaml",
