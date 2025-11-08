@@ -2,6 +2,12 @@ services:
     web:
         image: $APP_IMAGE:latest
         restart: unless-stopped
+        healthcheck:
+            test: "curl -f http://localhost:8000/api/_info/health-check"
+            interval: 15s
+            timeout: 2s
+            retries: 3
+            start_period: 15s
         volumes:
             -   type: bind
                 source: ${SERVER_VOLUME}/.env.local
