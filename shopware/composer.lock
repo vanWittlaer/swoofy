@@ -11805,65 +11805,6 @@
             "time": "2025-04-20T17:08:40+00:00"
         },
         {
-            "name": "maltyxx/images-generator",
-            "version": "1.0.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/maltyxx/images-generator.git",
-                "reference": "309be2f5e908882d53c83df900b92f1fd0769aa0"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/maltyxx/images-generator/zipball/309be2f5e908882d53c83df900b92f1fd0769aa0",
-                "reference": "309be2f5e908882d53c83df900b92f1fd0769aa0",
-                "shasum": ""
-            },
-            "require": {
-                "fakerphp/faker": "^1.10",
-                "php": ">=7.1"
-            },
-            "conflict": {
-                "bheller/images-generator": "*"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^9.4",
-                "squizlabs/php_codesniffer": "^3.5"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Maltyxx\\ImagesGenerator\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Yoann Vanitou"
-                },
-                {
-                    "name": "Bruce Heller",
-                    "email": "bheller@bheller.com",
-                    "homepage": "http://www.bheller.com"
-                }
-            ],
-            "description": "Generator of placeholder images for Faker",
-            "homepage": "https://github.com/maltyxx/images-generator",
-            "keywords": [
-                "data",
-                "faker",
-                "fixtures",
-                "images-generator",
-                "imagesgenerator"
-            ],
-            "support": {
-                "source": "https://github.com/maltyxx/images-generator/tree/1.0.1"
-            },
-            "time": "2022-02-23T15:50:15+00:00"
-        },
-        {
             "name": "mbezhanov/faker-provider-collection",
             "version": "2.0.2",
             "source": {
@@ -13488,24 +13429,24 @@
         },
         {
             "name": "shopware/dev-tools",
-            "version": "1.5.0",
+            "version": "1.5.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/shopware/dev-tools.git",
-                "reference": "b8621a119e89820dbe78ad6df527669193093805"
+                "reference": "d6cb945a6749deaeb36bf2fdf7c07d4840d81333"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/shopware/dev-tools/zipball/b8621a119e89820dbe78ad6df527669193093805",
-                "reference": "b8621a119e89820dbe78ad6df527669193093805",
+                "url": "https://api.github.com/repos/shopware/dev-tools/zipball/d6cb945a6749deaeb36bf2fdf7c07d4840d81333",
+                "reference": "d6cb945a6749deaeb36bf2fdf7c07d4840d81333",
                 "shasum": ""
             },
             "require": {
                 "doctrine/sql-formatter": "^1.1",
                 "fakerphp/faker": "^1.20",
-                "maltyxx/images-generator": "^1.0.0",
                 "mbezhanov/faker-provider-collection": "^2.0.1",
                 "phpunit/phpunit": "^9.6 | ^10 | ^11.4 | ^12",
+                "shopwarelabs/images-generator": "^1.0.0",
                 "symfony/browser-kit": "^5.4 | ^6 | ^7",
                 "symfony/doctrine-bridge": "^5.4.7 | ^6 | ^7",
                 "symfony/web-profiler-bundle": "^5.4 | ^6 | ^7"
@@ -13517,9 +13458,72 @@
             ],
             "support": {
                 "issues": "https://github.com/shopware/dev-tools/issues",
-                "source": "https://github.com/shopware/dev-tools/tree/1.5.0"
+                "source": "https://github.com/shopware/dev-tools/tree/1.5.1"
             },
-            "time": "2025-02-11T07:55:32+00:00"
+            "time": "2026-03-30T05:28:15+00:00"
+        },
+        {
+            "name": "shopwarelabs/images-generator",
+            "version": "1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/shopwareLabs/images-generator.git",
+                "reference": "600354f11d06b6ebe22b148eacaffae0f928edb3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/shopwareLabs/images-generator/zipball/600354f11d06b6ebe22b148eacaffae0f928edb3",
+                "reference": "600354f11d06b6ebe22b148eacaffae0f928edb3",
+                "shasum": ""
+            },
+            "require": {
+                "fakerphp/faker": "^1.10",
+                "php": ">=7.1"
+            },
+            "conflict": {
+                "bheller/images-generator": "*"
+            },
+            "replace": {
+                "maltyxx/images-generator": "self.version"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.4",
+                "squizlabs/php_codesniffer": "^3.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Maltyxx\\ImagesGenerator\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Yoann Vanitou"
+                },
+                {
+                    "name": "Bruce Heller",
+                    "email": "bheller@bheller.com",
+                    "homepage": "http://www.bheller.com"
+                }
+            ],
+            "description": "Generator of placeholder images for Faker",
+            "homepage": "https://github.com/shopwarelabs/images-generator",
+            "keywords": [
+                "data",
+                "faker",
+                "fixtures",
+                "images-generator",
+                "imagesgenerator"
+            ],
+            "support": {
+                "issues": "https://github.com/shopwareLabs/images-generator/issues",
+                "source": "https://github.com/shopwareLabs/images-generator/tree/1.0.1"
+            },
+            "time": "2026-03-30T05:35:23+00:00"
         },
         {
             "name": "staabm/side-effects-detector",
@@ -13978,5 +13982,5 @@
         "composer-runtime-api": "^2.0"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
