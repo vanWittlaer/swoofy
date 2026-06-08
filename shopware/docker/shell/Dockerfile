@@ -8,7 +8,7 @@ RUN apk add --no-cache \
     libstdc++ \
     mysql-client \
     openssh-client \
-    php-8.3 \
+    php-8.4 \
     rclone \
     rsync
 
