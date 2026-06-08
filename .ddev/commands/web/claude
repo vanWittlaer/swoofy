@@ -1,0 +1,7 @@
+#!/bin/bash
+
+## Description: Claude Code
+## Usage: claude
+## Example: ddev claude [...]
+
+claude "$@"
