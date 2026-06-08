@@ -1,0 +1,5 @@
+# .ddev/web-build/Dockerfile.claude
+# Install Claude Code CLI into the web image for the DDEV web user.
+RUN curl -fsSL https://claude.ai/install.sh | sudo -u "${username}" bash \
+ && sudo -u "${username}" mkdir -p "/home/${username}/bin" \
+ && sudo -u "${username}" ln -sf "/home/${username}/.local/bin/claude" "/home/${username}/bin/claude"
