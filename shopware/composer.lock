@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a3b7edd497a7f88210c181f16fb4b142",
+    "content-hash": "98c5474bec0a65494ac28b487249561a",
     "packages": [
         {
             "name": "async-aws/core",
@@ -5920,16 +5920,16 @@
         },
         {
             "name": "shopware/deployment-helper",
-            "version": "0.0.19",
+            "version": "0.0.27",
             "source": {
                 "type": "git",
                 "url": "https://github.com/shopware/deployment-helper.git",
-                "reference": "6a998aff6fc334c64632bd66f4b202e3ca378b67"
+                "reference": "4dc9ecfe46d4ad5672b1fa2ec75d6fcdc6bf1123"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/shopware/deployment-helper/zipball/6a998aff6fc334c64632bd66f4b202e3ca378b67",
-                "reference": "6a998aff6fc334c64632bd66f4b202e3ca378b67",
+                "url": "https://api.github.com/repos/shopware/deployment-helper/zipball/4dc9ecfe46d4ad5672b1fa2ec75d6fcdc6bf1123",
+                "reference": "4dc9ecfe46d4ad5672b1fa2ec75d6fcdc6bf1123",
                 "shasum": ""
             },
             "require": {
@@ -5950,7 +5950,7 @@
                 "symfony/yaml": "^7.0 || ^6.0"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "v3.64.0",
+                "friendsofphp/php-cs-fixer": "v3.82.0",
                 "phpstan/extension-installer": "1.4.3",
                 "phpstan/phpstan": "2.0.1",
                 "phpstan/phpstan-deprecation-rules": "2.0.0",
@@ -5981,9 +5981,9 @@
             ],
             "support": {
                 "issues": "https://github.com/shopware/deployment-helper/issues",
-                "source": "https://github.com/shopware/deployment-helper/tree/0.0.19"
+                "source": "https://github.com/shopware/deployment-helper/tree/0.0.27"
             },
-            "time": "2024-12-18T08:15:34+00:00"
+            "time": "2025-08-14T05:55:22+00:00"
         },
         {
             "name": "shopware/docker",
