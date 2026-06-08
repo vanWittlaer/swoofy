@@ -1,0 +1,11 @@
+web_environment:
+    - LEGACY_APP_URL=https://swoofy.my-demo.shop
+hooks:
+    post-import-db:
+        -   exec: |
+                mysql -e "
+                    UPDATE sales_channel_domain SET url = REPLACE(url, '${LEGACY_APP_URL}', '${DDEV_PRIMARY_URL}') WHERE url LIKE '%${LEGACY_APP_URL}%';
+                    DELETE FROM system_config WHERE configuration_key LIKE 'core.mailerSettings.%';
+                "
+        -   exec: rm -rf var/cache/*
+        -   exec: vendor/bin/shopware-deployment-helper run
