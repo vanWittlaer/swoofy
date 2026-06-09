@@ -1,11 +1,15 @@
 services:
     worker-1: &worker
-        image: $APP_IMAGE:latest
+        image: ${APP_IMAGE}:latest
         restart: unless-stopped
         volumes: &volumes
             -   type: bind
                 source: ${SERVER_VOLUME}/.env.local
                 target: /var/www/html/.env.local
+                read_only: true
+            -   type: bind
+                source: ${SERVER_VOLUME}/var/log
+                target: /var/www/html/var/log
             -   type: bind
                 source: ${SERVER_VOLUME}/files
                 target: /var/www/html/files
@@ -25,7 +29,7 @@ services:
     worker-2: *worker
 
     scheduler:
-        image: $APP_IMAGE:latest
+        image: ${APP_IMAGE}:latest
         restart: unless-stopped
         volumes: *volumes
         entrypoint: [ "php", "bin/console", "scheduled-task:run" ]
