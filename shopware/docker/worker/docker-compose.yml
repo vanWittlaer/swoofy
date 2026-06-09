@@ -1,7 +1,9 @@
 services:
-    worker-1: &worker
+    worker-1:
         image: ${APP_IMAGE}:${SOURCE_COMMIT:-latest}
         restart: unless-stopped
+        environment:
+            - LOG_CHANNEL=worker-1
         volumes: &volumes
             -   type: bind
                 source: ${SERVER_VOLUME}/.env.local
@@ -26,11 +28,19 @@ services:
                 source: ${SERVER_VOLUME}/public/thumbnail
                 target: /var/www/html/public/thumbnail
         entrypoint: [ "php", "bin/console", "messenger:consume", "async", "low_priority", "--time-limit=300", "--memory-limit=512M" ]
-    worker-2: *worker
+    worker-2:
+        image: ${APP_IMAGE}:${SOURCE_COMMIT:-latest}
+        restart: unless-stopped
+        environment:
+            - LOG_CHANNEL=worker-2
+        volumes: *volumes
+        entrypoint: [ "php", "bin/console", "messenger:consume", "async", "low_priority", "--time-limit=300", "--memory-limit=512M" ]
 
     scheduler:
         image: ${APP_IMAGE}:${SOURCE_COMMIT:-latest}
         restart: unless-stopped
+        environment:
+            - LOG_CHANNEL=scheduler
         volumes: *volumes
         entrypoint: [ "php", "bin/console", "scheduled-task:run" ]
 
