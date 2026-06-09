@@ -1,6 +1,6 @@
 services:
     web:
-        image: ${APP_IMAGE}:latest
+        image: ${APP_IMAGE}:${SOURCE_COMMIT:-latest}
         restart: unless-stopped
         healthcheck:
             test: "curl -f http://localhost:8000/api/_info/health-check"
