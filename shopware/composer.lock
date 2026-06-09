@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "98c5474bec0a65494ac28b487249561a",
+    "content-hash": "ef0884a2377d073cf44d6d3b286b2534",
     "packages": [
         {
             "name": "async-aws/core",
@@ -5987,20 +5987,20 @@
         },
         {
             "name": "shopware/docker",
-            "version": "0.2.0",
+            "version": "0.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/shopware/docker.git",
-                "reference": "9149aefef4af443024ceb3541e7311ee4f76eaa9"
+                "reference": "a015a43e2cbf6c1f81e52dfcb398ab5c6da4a86e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/shopware/docker/zipball/9149aefef4af443024ceb3541e7311ee4f76eaa9",
-                "reference": "9149aefef4af443024ceb3541e7311ee4f76eaa9",
+                "url": "https://api.github.com/repos/shopware/docker/zipball/a015a43e2cbf6c1f81e52dfcb398ab5c6da4a86e",
+                "reference": "a015a43e2cbf6c1f81e52dfcb398ab5c6da4a86e",
                 "shasum": ""
             },
             "require": {
-                "shopware/core": ">=6.6.1.0",
+                "shopware/core": ">=6.7.0.0",
                 "shopware/deployment-helper": "*"
             },
             "type": "metapackage",
@@ -6011,9 +6011,9 @@
             "description": "Docker image for Shopware 6 production",
             "support": {
                 "issues": "https://github.com/shopware/docker/issues",
-                "source": "https://github.com/shopware/docker/tree/0.2.0"
+                "source": "https://github.com/shopware/docker/tree/0.3.0"
             },
-            "time": "2024-10-05T07:51:55+00:00"
+            "time": "2025-02-18T12:07:13+00:00"
         },
         {
             "name": "shopware/elasticsearch",
