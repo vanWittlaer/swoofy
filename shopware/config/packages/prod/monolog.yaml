@@ -1,21 +1,22 @@
 parameters:
-  env(MONOLOG_LOG_LEVEL): "error"
+    env(LOG_CHANNEL): 'default'
+    env(MONOLOG_LOG_LEVEL): "error"
 monolog:
     handlers:
         main:
             type: fingers_crossed
             action_level: "%env(MONOLOG_LOG_LEVEL)%"
             handler: nested
-            excluded_http_codes: [404, 405]
+            excluded_http_codes: [ 404, 405 ]
             buffer_size: 50
         nested:
-            type: stream
-            path: php://stderr
+            type: rotating_file
+            path: "%kernel.logs_dir%/%kernel.environment%-%env(LOG_CHANNEL)%.log"
             level: "%env(MONOLOG_LOG_LEVEL)%"
-            formatter: monolog.formatter.json
+            max_files: 10
         console:
             type: console
             process_psr_3_messages: false
-            channels: ["!event", "!doctrine"]
+            channels: [ "!event", "!doctrine" ]
         business_event_handler_buffer:
             level: "%env(MONOLOG_LOG_LEVEL)%"

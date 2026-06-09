@@ -1,6 +1,6 @@
 services:
     web:
-        image: $APP_IMAGE:latest
+        image: ${APP_IMAGE}:latest
         restart: unless-stopped
         healthcheck:
             test: "curl -f http://localhost:8000/api/_info/health-check"
@@ -12,12 +12,13 @@ services:
             -   type: bind
                 source: ${SERVER_VOLUME}/.env.local
                 target: /var/www/html/.env.local
+                read_only: true
+            -   type: bind
+                source: ${SERVER_VOLUME}/var/log
+                target: /var/www/html/var/log
             -   type: bind
                 source: ${SERVER_VOLUME}/files
                 target: /var/www/html/files
-            -   type: bind
-                source: ${SERVER_VOLUME}/public/bundles
-                target: /var/www/html/public/bundles
             -   type: bind
                 source: ${SERVER_VOLUME}/public/media
                 target: /var/www/html/public/media
