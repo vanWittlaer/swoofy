@@ -2,6 +2,8 @@ services:
     web:
         image: ${APP_IMAGE}:${SOURCE_COMMIT:-latest}
         restart: unless-stopped
+        environment:
+            - LOG_CHANNEL=web
         healthcheck:
             test: "curl -f http://localhost:8000/api/_info/health-check"
             interval: 15s
