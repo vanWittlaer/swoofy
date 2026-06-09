@@ -5,7 +5,7 @@
             "repo": "github.com/symfony/recipes",
             "branch": "main",
             "version": "1.0",
-            "ref": "87424683adc81d7dc305eefec1fced883084aab9"
+            "ref": "fdd756167454623e21f1d769c5b814b243782a67"
         }
     },
     "nyholm/psr7": {
@@ -30,12 +30,12 @@
         }
     },
     "phpunit/phpunit": {
-        "version": "12.3",
+        "version": "12.5",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
             "version": "11.1",
-            "ref": "c6658a60fc9d594805370eacdf542c3d6b5c0869"
+            "ref": "ca0bc067abfb40a8de1b2561b96cbfc2b833c314"
         },
         "files": [
             ".env.test",
@@ -50,7 +50,7 @@
             "repo": "github.com/shopware/recipes",
             "branch": "main",
             "version": "6.7",
-            "ref": "baf82770e6bb9789af24c5af775810a48309e076"
+            "ref": "914662662f5398fda649a2da578da202c3b50dac"
         },
         "files": [
             "bin/build-administration.sh",
@@ -63,7 +63,7 @@
             "repo": "github.com/shopware/recipes",
             "branch": "main",
             "version": "6.7",
-            "ref": "469075e215817ebc0a52d1dcc77a60a226a2b312"
+            "ref": "3a9e7f8428dbada09530cb35bf072303e108e597"
         },
         "files": [
             "bin/.htaccess",
@@ -85,18 +85,16 @@
         ]
     },
     "shopware/docker": {
-        "version": "0.2",
+        "version": "0.3",
         "recipe": {
             "repo": "github.com/shopware/recipes",
             "branch": "main",
-            "version": "0.2",
-            "ref": "a9275c6d67b58ea736d36646dd951a42aad78957"
+            "version": "0.3",
+            "ref": "b5a2b001ea6785c6db0b6c6073dc64e207214bbd"
         },
         "files": [
             "docker/Dockerfile",
-            "config/packages/docker.yaml",
-            "config/packages/prod/monolog.yaml",
-            "config/packages/trusted_env.yaml"
+            "config/packages/prod/monolog.yaml"
         ]
     },
     "shopware/elasticsearch": {
@@ -115,7 +113,7 @@
             "repo": "github.com/shopware/recipes",
             "branch": "main",
             "version": "6.7",
-            "ref": "13c5bb5ff2e8dde479bd0f4f398041d409864641"
+            "ref": "512a94282164f74f7548d0915cbcd1cfd365f055"
         },
         "files": [
             "bin/build-storefront.sh",
