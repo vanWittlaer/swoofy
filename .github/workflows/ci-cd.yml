@@ -8,6 +8,10 @@ on:
       - 'feature/**'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build_staging:
     if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature')
