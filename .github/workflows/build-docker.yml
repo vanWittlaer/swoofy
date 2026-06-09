@@ -19,7 +19,7 @@ jobs:
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to GitHub Container Registry
@@ -29,12 +29,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./shopware
           file: ./shopware/docker/Dockerfile
           push: true
-          tags: ghcr.io/${{ env.REPO }}/${{ inputs.environment }}:latest
-          build-args: |
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ghcr.io/${{ env.REPO }}/${{ inputs.environment }}:latest
+            ghcr.io/${{ env.REPO }}/${{ inputs.environment }}:${{ github.sha }}
+          build-args: |-
             SHOPWARE_PACKAGES_TOKEN=${{ secrets.BEARER_PACKAGES_SHOPWARE }}
             SHOPWARE_CLI_FORCE_BUN=1
