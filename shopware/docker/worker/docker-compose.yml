@@ -1,6 +1,6 @@
 services:
     worker-1: &worker
-        image: ${APP_IMAGE}:latest
+        image: ${APP_IMAGE}:${SOURCE_COMMIT:-latest}
         restart: unless-stopped
         volumes: &volumes
             -   type: bind
@@ -29,7 +29,7 @@ services:
     worker-2: *worker
 
     scheduler:
-        image: ${APP_IMAGE}:latest
+        image: ${APP_IMAGE}:${SOURCE_COMMIT:-latest}
         restart: unless-stopped
         volumes: *volumes
         entrypoint: [ "php", "bin/console", "scheduled-task:run" ]
