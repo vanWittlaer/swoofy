@@ -1,0 +1,11 @@
+#!/bin/bash
+#ddev-generated
+
+## Description: Run the Shopware storefront watcher via shopware-cli
+## Usage: storefront-watch
+## Example: ddev storefront-watch
+
+# Hot-reloads the storefront through the proxy on port 9998 (see
+# config.watcher.yaml). Targets Shopware 6.7.4.2+.
+
+exec shopware-cli project storefront-watch "$@"

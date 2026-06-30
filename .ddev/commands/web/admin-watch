@@ -1,0 +1,31 @@
+#!/bin/bash
+#ddev-generated
+
+## Description: Run the Shopware admin (Vite) watcher via shopware-cli
+## Usage: admin-watch <plugin-dir>
+## Example: ddev admin-watch custom/static-plugins/MyPlugin
+
+# Hot-reloads a plugin's administration assets through the Vite dev server.
+# Targets Shopware 6.7.4.2+ (Vite, port 5173). For older versions see
+# config.watcher.yaml and README.md.
+
+set -eu
+
+if [ $# -lt 1 ]; then
+  echo "Usage: ddev admin-watch <plugin-dir>" >&2
+  echo "  e.g. ddev admin-watch custom/static-plugins/MyPlugin" >&2
+  exit 1
+fi
+
+# Strip a trailing slash so "${PLUGIN_DIR}/" below is always exactly one.
+PLUGIN_DIR="${1%/}"
+
+if [ ! -d "${PLUGIN_DIR}" ]; then
+  echo "Plugin directory not found: ${PLUGIN_DIR}" >&2
+  exit 1
+fi
+
+exec shopware-cli extension admin-watch "${PLUGIN_DIR}/" \
+  "https://${DDEV_HOSTNAME}" \
+  --listen :5173 \
+  --external-url "https://${DDEV_HOSTNAME}:5173"

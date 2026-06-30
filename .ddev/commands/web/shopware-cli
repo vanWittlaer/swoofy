@@ -1,0 +1,8 @@
+#!/bin/bash
+#ddev-generated
+
+## Description: shopware-cli
+## Usage: shopware-cli
+## Example: ddev shopware-cli [...]
+
+shopware-cli "$@"
