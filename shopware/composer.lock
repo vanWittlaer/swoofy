@@ -6911,59 +6911,48 @@
         {
             "name": "swag/demo-data",
             "version": "2.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/shopware/SwagPlatformDemoData.git",
+                "reference": "635c2287d1255f80adcc7f26bbc963319115ef95"
+            },
             "dist": {
-                "type": "path",
-                "url": "custom/static-plugins/SwagPlatformDemoData",
-                "reference": "af7adb92a072b4e34975750ebe1df7d260ee83d0"
+                "type": "zip",
+                "url": "https://api.github.com/repos/shopware/SwagPlatformDemoData/zipball/635c2287d1255f80adcc7f26bbc963319115ef95",
+                "reference": "635c2287d1255f80adcc7f26bbc963319115ef95",
+                "shasum": ""
             },
             "require": {
                 "shopware/core": "~6.6.0 || ~6.7.0"
             },
             "type": "shopware-platform-plugin",
             "extra": {
-                "shopware-plugin-class": "Swag\\PlatformDemoData\\SwagPlatformDemoData",
-                "plugin-icon": "src/Resources/config/plugin.png",
-                "copyright": "(c) by shopware AG",
                 "label": {
                     "de-DE": "Shopware 6 Demodaten",
                     "en-GB": "Shopware 6 Demo data"
                 },
+                "copyright": "(c) by shopware AG",
                 "description": {
                     "de-DE": "Demodaten Plugin für Shopware 6. Nicht in Produktiv-Umgebungen nutzen! Die Daten werden beim Aktivieren des Plugins importiert und überschreiben bestehende Daten.",
                     "en-GB": "Demo data plugin for Shopware 6. Do not use in production environments! The data is imported on plugin activation and it will overwritten existing data."
+                },
+                "plugin-icon": "src/Resources/config/plugin.png",
+                "supportLink": {
+                    "de-DE": "https://docs.shopware.com/de",
+                    "en-GB": "https://docs.shopware.com/en"
                 },
                 "manufacturerLink": {
                     "de-DE": "https://store.shopware.com/de/extension-partners/shopware-ag",
                     "en-GB": "https://store.shopware.com/en/extension-partners/shopware-ag"
                 },
-                "supportLink": {
-                    "de-DE": "https://docs.shopware.com/de",
-                    "en-GB": "https://docs.shopware.com/en"
-                }
+                "shopware-plugin-class": "Swag\\PlatformDemoData\\SwagPlatformDemoData"
             },
             "autoload": {
                 "psr-4": {
                     "Swag\\PlatformDemoData\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Swag\\PlatformDemoData\\Tests\\": "tests/"
-                }
-            },
-            "scripts": {
-                "cs": [
-                    "../../../vendor/bin/php-cs-fixer fix --dry-run"
-                ],
-                "cs-fix": [
-                    "../../../vendor/bin/php-cs-fixer fix"
-                ],
-                "phpstan": [
-                    "php ../../../src/Core/DevOps/StaticAnalyze/phpstan-bootstrap.php",
-                    "php bin/phpstan-config-generator.php",
-                    "../../../vendor/bin/phpstan analyze"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -6973,10 +6962,11 @@
                 }
             ],
             "description": "Plugin including demo data",
-            "transport-options": {
-                "symlink": true,
-                "relative": true
-            }
+            "support": {
+                "issues": "https://github.com/shopware/SwagPlatformDemoData/issues",
+                "source": "https://github.com/shopware/SwagPlatformDemoData/tree/2.1.0"
+            },
+            "time": "2025-02-27T12:14:16+00:00"
         },
         {
             "name": "symfony/amqp-messenger",
