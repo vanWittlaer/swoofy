@@ -1,0 +1,11 @@
+name: claude-code
+repository: vanwittlaer/ddev-claude-code
+version: v1.1.2
+install_date: "2026-06-30T14:02:18+02:00"
+project_files:
+    - web-build/Dockerfile.claude
+    - commands/web/claude
+    - config.claude.yaml
+    - config.git-signing.yaml
+global_files: []
+removal_actions: []
