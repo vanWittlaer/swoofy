@@ -29,6 +29,18 @@
             "ref": "8cc0e41387cb37cb65cc9a1ce8bac7eed899687a"
         }
     },
+    "php-http/discovery": {
+        "version": "1.20",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.18",
+            "ref": "f45b5dd173a27873ab19f5e3180b2f661c21de02"
+        },
+        "files": [
+            "config/packages/http_discovery.yaml"
+        ]
+    },
     "phpunit/phpunit": {
         "version": "12.5",
         "recipe": {
@@ -194,6 +206,9 @@
             "ref": "7c4b09065438b4fbe2baaf7838347090efffafac"
         }
     },
+    "symfony/mcp-bundle": {
+        "version": "v0.9.0"
+    },
     "symfony/messenger": {
         "version": "7.2",
         "recipe": {
@@ -261,6 +276,24 @@
             "branch": "main",
             "version": "5.4",
             "ref": "99277800a8f532fc369df7148804ed3d257c69c0"
+        }
+    },
+    "symfony/uid": {
+        "version": "8.1",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "7.0",
+            "ref": "0df5844274d871b37fc3816c57a768ffc60a43a5"
+        }
+    },
+    "symfony/ux-twig-component": {
+        "version": "2.35",
+        "recipe": {
+            "repo": "github.com/shopware/recipes",
+            "branch": "main",
+            "version": "2.13",
+            "ref": "52a1848fd64f44ea41b1cdf80cb5a573cc1632b3"
         }
     },
     "symfony/validator": {
