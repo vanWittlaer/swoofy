@@ -1,5 +1,6 @@
-# .ddev/web-build/Dockerfile.claude
-# Install Claude Code CLI into the web image for the DDEV web user.
+#ddev-generated
+# Install the Claude Code CLI into the web image for the DDEV web user.
+# `${username}` is a build arg DDEV injects into web-build Dockerfiles.
 RUN curl -fsSL https://claude.ai/install.sh | sudo -u "${username}" bash \
  && sudo -u "${username}" mkdir -p "/home/${username}/bin" \
  && sudo -u "${username}" ln -sf "/home/${username}/.local/bin/claude" "/home/${username}/bin/claude"

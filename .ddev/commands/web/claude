@@ -1,7 +1,8 @@
 #!/bin/bash
+#ddev-generated
 
 ## Description: Claude Code
 ## Usage: claude
 ## Example: ddev claude [...]
 
-claude "$@"
+cd $DDEV_APPROOT && claude "$@"

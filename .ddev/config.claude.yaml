@@ -1,4 +1,4 @@
-# .ddev/claude.config.yaml
+#ddev-generated
 # Claude Code persistence
 #
 # Auth + state live in DDEV's global cache volume (/mnt/ddev-global-cache),
@@ -7,12 +7,12 @@
 # the project tree also avoids pushing Claude's writes through Mutagen and keeps
 # credentials out of git. State is keyed per project ($DDEV_PROJECT).
 hooks:
-    post-start:
-        - exec: |
-              set -eu
-              CC_DIR="/mnt/ddev-global-cache/claude-code/${DDEV_PROJECT:-default}"
-              mkdir -p "${CC_DIR}/.claude"
-              [ -f "${CC_DIR}/.claude.json" ] || echo '{}' > "${CC_DIR}/.claude.json"
-              rm -rf "${HOME}/.claude" "${HOME}/.claude.json" 2>/dev/null || true
-              ln -s "${CC_DIR}/.claude.json" "${HOME}/.claude.json"
-              ln -s "${CC_DIR}/.claude" "${HOME}/.claude"
+  post-start:
+    - exec: |
+        set -eu
+        CC_DIR="/mnt/ddev-global-cache/claude-code/${DDEV_PROJECT:-default}"
+        mkdir -p "${CC_DIR}/.claude"
+        [ -f "${CC_DIR}/.claude.json" ] || echo '{}' > "${CC_DIR}/.claude.json"
+        rm -rf "${HOME}/.claude" "${HOME}/.claude.json" 2>/dev/null || true
+        ln -s "${CC_DIR}/.claude.json" "${HOME}/.claude.json"
+        ln -s "${CC_DIR}/.claude" "${HOME}/.claude"
