@@ -1,8 +1,6 @@
 framework:
-    session:
-        handler_id: redis://redis:6379/0
     cache:
-        # to deactivate redis caching for local testing, switch the following two to cache.adapter.array
-        app: cache.adapter.redis_tag_aware
-        system: cache.adapter.redis_tag_aware
-        default_redis_provider: redis://redis:6379/1
+        app: cache.adapter.filesystem
+        system: cache.adapter.filesystem
+    session:
+        handler_id: session.handler.native_file

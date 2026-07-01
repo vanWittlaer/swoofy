@@ -1,16 +1,64 @@
+parameters:
+    env(S3_BUCKET_PRIVATE): 'default'
+    env(S3_BUCKET_PUBLIC): 'default'
+    env(S3_REGION): 'nbg1'
+    env(S3_DOMAIN): 'https://nbg1.your-objectstorage.com'
+    env(S3_ACCESS_KEY_ID): 'placeholder'
+    env(S3_SECRET_ACCESS_KEY): 'placeholder'
+    env(S3_CDN_DOMAIN): ''
+    # Path prefix INSIDE the bucket (e.g. "production/"). Lets multiple environments
+    # share one bucket without colliding. Empty = objects live at the bucket root.
+    env(S3_ROOT_PREFIX): ''
+
 shopware:
     auto_update:
         enabled: false
+
     store:
         frw: false
+
     admin_worker:
         enable_admin_worker: false
         enable_notification_worker: false
         enable_queue_stats_worker: false
+
     mail:
         update_mail_variables_on_send: false
-    increment:
-        user_activity:
-            type: 'array'
-        message_queue:
-            type: 'array'
+
+    filesystem:
+        private:
+            type: "amazon-s3"
+            visibility: "private"
+            config:
+                bucket: "%env(S3_BUCKET_PRIVATE)%"
+                region: "%env(S3_REGION)%"
+                endpoint: "%env(S3_DOMAIN)%"
+                use_path_style_endpoint: true
+                root: "%env(S3_ROOT_PREFIX)%files"
+                credentials:
+                    key: "%env(S3_ACCESS_KEY_ID)%"
+                    secret: "%env(S3_SECRET_ACCESS_KEY)%"
+
+        public: &public
+            url: "%env(S3_CDN_DOMAIN)%/"
+            type: "amazon-s3"
+            visibility: "public"
+            config:
+                bucket: "%env(S3_BUCKET_PUBLIC)%"
+                region: "%env(S3_REGION)%"
+                endpoint: "%env(S3_DOMAIN)%"
+                use_path_style_endpoint: true
+                root: "%env(S3_ROOT_PREFIX)%public"
+                credentials:
+                    key: "%env(S3_ACCESS_KEY_ID)%"
+                    secret: "%env(S3_SECRET_ACCESS_KEY)%"
+
+        sitemap: *public
+
+        theme: *public
+
+        asset: &local
+            type: "local"
+            url: "%env(APP_URL)%/"
+            config:
+                root: "%kernel.project_dir%/public"

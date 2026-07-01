@@ -1,0 +1,19 @@
+shopware:
+    staging:
+        mailing:
+            # after 6.7 go-live, this should be replaced by using the .env variable
+            disable_delivery: true
+        storefront:
+            # Shows a banner in the storefront when staging mode is active (default: true)
+            show_banner: true
+        administration:
+            # Shows a banner in the administration when staging mode is active (default: true)
+            show_banner: true
+        sales_channel:
+            domain_rewrite:
+                - type: prefix
+                  match: https://www.peaktech.de
+                  replace: https://staging.peaktech.de
+        elasticsearch:
+            # Not used
+            check_for_existence: false

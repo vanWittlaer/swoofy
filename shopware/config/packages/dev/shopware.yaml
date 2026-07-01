@@ -3,5 +3,30 @@ shopware:
         enable_admin_worker: true
         enable_notification_worker: true
         enable_queue_stats_worker: true
+
     mail:
         update_mail_variables_on_send: true
+
+    cache:
+        invalidation:
+            delay_enabled: false
+
+    filesystem:
+        private:
+            type: "local"
+            visibility: "private"
+            config:
+                root: "%kernel.project_dir%/files"
+        public:
+            url: "%env(APP_URL)%"
+            type: "local"
+            visibility: "public"
+            config:
+                root: "%kernel.project_dir%/public"
+        temp:
+            type: "local"
+            config:
+                root: "%kernel.project_dir%/var"
+        theme:
+        asset:
+        sitemap:
