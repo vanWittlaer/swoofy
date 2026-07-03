@@ -1,9 +1,9 @@
-# Shopware-on-Coolify OpenTofu Spike
+# Shopware-on-Coolify Infrastructure (OpenTofu)
 
-Stand up a representative Shopware stack on an existing Coolify v4 instance with native
-OpenTofu + the `coolify-terraform/coolify` provider, across **production + staging**, to
-decide whether a `coolshop-cli` wrapper is worth building. The stack is up and working;
-the provider/Coolify quirks discovered along the way are in `FINDINGS.md`.
+The production **and** staging Shopware 6 stack on Coolify v4, provisioned as code with
+OpenTofu and the `coolify-terraform/coolify` provider. One module (`modules/shopware-stack`)
+is instantiated per environment. The stack is live; the provider/Coolify quirks worked around
+along the way are documented in `FINDINGS.md`.
 
 ## What gets created (per environment)
 
@@ -165,10 +165,10 @@ tofu destroy -var-file=production.tfvars -var-file=staging.tfvars
 Coolify may leave orphaned containers behind (they keep Traefik labels and can keep serving a
 domain); remove them on the host with `docker rm -f` — see FINDINGS.
 
-## State & outcome
+## State
 
 State is a **local file** (`tofu.tfstate`, `backend "local"` in `versions.tf`) — fine for a
-spike; swap for a remote, locked, encrypted backend before real production.
+single operator; move to a remote, locked, encrypted backend before more people manage it.
 
 Because the state and the owned secrets live only on one machine, **keep a safe backup copy of
 the git-ignored `secrets.auto.tfvars`** (e.g. in a password manager or offline vault). Losing
@@ -176,4 +176,4 @@ it means regenerating `app_secret` / `instance_id` and re-entering every credent
 also stashing a periodic copy of **`tofu.tfstate`** off-machine: losing it doesn't lose the
 infrastructure — the Coolify provider supports `tofu import`, so the stack can be re-adopted by
 ID — but a copy spares you the tedious per-resource re-import. See `FINDINGS.md` for the full
-provider/Coolify quirk log feeding the `coolshop-cli` go/no-go.
+provider/Coolify quirk log.

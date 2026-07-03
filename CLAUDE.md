@@ -86,7 +86,7 @@ Both pipelines do the same two stages — **build image → POST to a Coolify de
 
 ## Infrastructure as Code (`infra/`)
 
-OpenTofu (`tofu`, ≥ 1.7) provisioning the Coolify stack via the `coolify-terraform/coolify` provider. This is a **validation spike** (see `infra/README.md` and `infra/FINDINGS.md`), not yet hardened production IaC.
+OpenTofu (`tofu`, ≥ 1.7) provisioning the **live production + staging** Coolify stack via the `coolify-terraform/coolify` provider (see `infra/README.md` and `infra/FINDINGS.md`). Not yet fully hardened — state is a local backend and a few steps stay manual (log-dir chown, DB/Redis UI tuning, ES index build, staging `.htpasswd`) — but it's the deployed infrastructure, no longer a throwaway spike.
 
 ```bash
 cd infra
