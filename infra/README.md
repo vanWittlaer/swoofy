@@ -9,12 +9,12 @@ the provider/Coolify quirks discovered along the way are in `FINDINGS.md`.
 
 | Resource | tofu type | Notes |
 |---|---|---|
-| `web` | `coolify_application_docker_image` | nginx+php-fpm on :8000, storefront domain, health check `/api/_info/health-check`, post-deploy runs the deployment-helper (install/migrate) |
+| `web` | `coolify_application_docker_image` | nginx+php-fpm on :8000, storefront domain, health check `/api/_info/health-check`, post-deploy runs the deployment-helper (install/migrate). Staging runs the `final-protected` image (HTTP basic-auth) + a `.htpasswd` bind mount |
 | `workers` | `coolify_service` (`docker_compose_raw`) | **one service, 3 containers**: `worker-1`, `worker-2` (`messenger:consume`), `scheduler` (`scheduled-task:run`) |
 | `mariadb`, `redis-cache`, `redis-session` | `coolify_database_*` | DSNs read from each resource's computed `internal_db_url`; Symfony lock uses the DB |
 | `rabbitmq`, `elasticsearch` | `coolify_service` (`docker_compose_raw`) | internal-only; elasticsearch per-env via `enable_elasticsearch` (on for prod + staging) |
-| `mailpit` | `coolify_application_docker_image` | per-env via `enable_mailpit` (staging on, prod off → real SMTP) |
-| `backup` | `coolify_service` (`docker_compose_raw`) + 2× `coolify_scheduled_task` | idle shell container, cron-`exec`'d; per-env via `enable_backup` (on for prod + staging) |
+| `mailpit` | `coolify_application_docker_image` | per-env via `enable_mailpit` (staging on, prod off → real SMTP); web UI on `mailpit_domain`, gated by `MP_UI_AUTH` (`mailpit_ui_auth`) |
+| `backup` | `coolify_service` (`docker_compose_raw`) + 2× `coolify_scheduled_task` | idle `shopware-ops-shell` sidecar, cron-`exec`'d; per-env via `enable_backup` (on for prod + staging) |
 
 The private/public **filesystems are on S3** (`shopware/config/packages/shopware.yaml`); the
 `S3_*` env vars are fanned out to every process, and bucket **CORS** is managed via the AWS
@@ -25,8 +25,9 @@ resource, so the shared env (`local.shared_env`) is fanned out per resource.
 
 - `main.tf` — instantiates `modules/shopware-stack` twice (production + staging).
 - `modules/shopware-stack/` — the stack: `apps.tf` (web), `workers.tf` (workers service),
-  `databases.tf`, `services.tf` (rabbitmq/elasticsearch/mailpit), `env.tf`, `storage.tf`
-  (web var/log bind mount), `locals.tf` (shared env, DSNs), `cors` lives at root in `cors.tf`.
+  `databases.tf`, `services.tf` (rabbitmq/elasticsearch/mailpit), `backup.tf` (optional backup
+  service + scheduled tasks), `env.tf`, `storage.tf` (web `var/log` + staging `.htpasswd` bind
+  mounts), `locals.tf` (shared env, DSNs). `cors.tf` lives at root.
 - `production.tfvars` / `staging.tfvars` — per-env **non-secret** settings.
 - `secrets.auto.tfvars` — **git-ignored** secrets (see below).
 
@@ -69,13 +70,19 @@ via `internal_db_url`), and we set the RabbitMQ password ourselves, so the value
 - `s3_access_key_id` / `s3_secret_access_key` — object-storage credentials.
 - `mailer_dsn` — production SMTP DSN (defaults to `null://null`; staging ignores it and uses
   Mailpit).
+- `mailpit_ui_auth` — (staging) basic-auth for the Mailpit web UI (`MP_UI_AUTH`), space-separated
+  `user:password`. Empty ⇒ the UI is open — set it, since Mailpit gets a public domain.
+- `s3_backup_access_key_id` / `s3_backup_secret_access_key` — backup-bucket credentials, required
+  when `enable_backup = true` (Hetzner keys are project-wide, so these may equal the `s3_*` pair).
 
 ### Per-environment settings (`*.tfvars`)
 
 Env-specific knobs live in the `production` / `staging` objects: `web_image*`, `web_domain`,
-`s3`, the Symfony env controls **`app_env`** (`prod` / `stage`), **`app_debug`**,
-**`monolog_log_level`**, and the infra toggles **`enable_elasticsearch`** / **`enable_mailpit`**.
-Mail routing follows `enable_mailpit` (staging → Mailpit, production → the secret DSN).
+`s3`, the Symfony env controls **`app_env`** (`prod` / `stage`) / **`app_debug`** /
+**`monolog_log_level`**, the infra toggles **`enable_elasticsearch`** / **`enable_mailpit`** /
+**`enable_backup`** (+ the **`backup`** object: bucket, region, domain, path, schedules), and —
+staging only — **`mailpit_domain`** (the Mailpit web-UI FQDN). Mail routing follows
+`enable_mailpit` (staging → Mailpit, production → the secret DSN).
 (`mariadb_public_port` / `rabbitmq_mgmt_port` are still literals in `main.tf` — a remaining
 candidate to move into the per-env objects for uniformity.)
 
@@ -102,11 +109,14 @@ Coolify **Scheduled Tasks** `exec` the two backup scripts into that running cont
 (staggered so the S3 mirror runs after the DB dump); override per env via **`backup.db_schedule`**
 / **`backup.s3_schedule`** in `production.tfvars` / `staging.tfvars`.
 
-The **backup bucket must be a different location** than the source S3 buckets (offsite —
-`production.tfvars` / `staging.tfvars` point it at `fsn1` while the source buckets live
-elsewhere; see `backup.s3_backup_region` / `s3_backup_domain`). Its credentials
-(`s3_backup_access_key_id` / `s3_backup_secret_access_key`) are **secrets**, so they live in the
-git-ignored `secrets.auto.tfvars` alongside the other per-env secrets, not in `*.tfvars`.
+The backup bucket is a **separate bucket** (`swoofy-backup`). *Ideally* it would sit at a
+different, offsite location than the source buckets — but the current tfvars point it at
+**`hel1`**, the same object-storage location as the source (that's the only Hetzner location in
+use here). So it protects against accidental deletion (separate bucket + rclone soft-deletes)
+but **not** a location-wide outage; set `backup.s3_backup_region` / `s3_backup_domain` to a
+different location if you have one. Its credentials (`s3_backup_access_key_id` /
+`s3_backup_secret_access_key`) are **secrets** in the git-ignored `secrets.auto.tfvars`, not in
+`*.tfvars` (Hetzner keys are project-wide, so they can be the same pair as `s3_*`).
 
 ## Apply
 
@@ -129,9 +139,14 @@ tofu apply -target=module.production -var-file=production.tfvars -var-file=stagi
   (storefront) and `bin/console es:admin:index` (admin search), and redeploy the workers so
   they pick up the ES env. Until built, search falls back to the DB
   (`SHOPWARE_ES_THROW_EXCEPTION=0`), so nothing 500s in the meantime.
+- **Staging basic-auth `.htpasswd`** — the staging `final-protected` image serves the storefront
+  behind HTTP basic-auth, reading `/var/www/auth/.htpasswd` from a host bind mount
+  (`basic_auth_host_path`, wired in `main.tf` to `<log_host_base>/staging/auth`). Create it on
+  the host so the hash never enters the repo/image:
+  `mkdir -p /data/shopware/staging/auth && htpasswd -nbB <user> '<pw>' > /data/shopware/staging/auth/.htpasswd && chown -R 82:82 /data/shopware/staging/auth`.
 
-`connect_to_docker_network` (rabbitmq + workers + elasticsearch reaching the shared network)
-is handled automatically by `null_resource`s (the provider can't round-trip the flag).
+`connect_to_docker_network` (rabbitmq + workers + elasticsearch + backup reaching the shared
+network) is handled automatically by `null_resource`s (the provider can't round-trip the flag).
 
 ### Env changes need a redeploy
 

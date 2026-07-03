@@ -152,6 +152,50 @@ image idle; Coolify **Scheduled Tasks** `exec` `bin/backup-db.sh` (DB dump via
 Point `backup_image` / `backup_image_tag` at the published image and set the backup-bucket
 coordinates/credentials; see `infra/README.md` for schedules and bucket configuration.
 
+# First deploy: seeding data
+`tofu apply` provisions an **empty** stack — a fresh MariaDB and empty S3 buckets (the buckets
+themselves are a prerequisite; OpenTofu only manages their CORS). Two ways to get to a working shop:
+
+## a) Fresh install (from scratch)
+The first deploy's post-deploy command runs the Shopware deployment-helper, which installs a
+fresh system on an empty database — schema + migrations + `asset:install` + theme compile — and
+writes the assets and compiled theme straight into the **public S3 bucket**. If the helper isn't
+configured to auto-install, exec into the web container once:
+```bash
+vendor/bin/shopware-deployment-helper run     # installs when the DB is empty, otherwise migrates
+# or explicitly:  bin/console system:install --basic-setup
+bin/console user:create <admin> --admin       # create an admin login
+```
+Nothing to pre-seed in S3 — Shopware populates it.
+
+## b) Import an existing installation
+First match the source's Shopware version to this repo's `composer.lock` (up/downgrade the source
+if needed), then bring over **both** the database and the media.
+
+**Database** — dump the source and load it into the new MariaDB. Reach it over an SSH tunnel to
+`mariadb_public_port`, or run the import from a maintenance/shell container on the server:
+```bash
+shopware-cli project dump --output dump.sql.gz ...   # (or mysqldump on the source)
+zcat dump.sql.gz | mysql -h 127.0.0.1 -P <mariadb_public_port> -u shopware -p shopware
+bin/console database:migrate --all                   # align the schema to the deployed version
+# rewrite the sales_channel_domain rows to the new prod/staging URLs, then:
+bin/console cache:clear
+```
+(The ddev `post-import-db` hook does the same domain rewrite locally — mirror it here.)
+
+**Filesystem (media → S3)** — the media must live in the new buckets under Shopware's key layout
+(mind the in-bucket prefix `S3_ROOT_PREFIX = <env>/`). From a local-disk source, sync it up; from
+an existing S3 source, sync bucket→bucket:
+```bash
+rclone sync ./public/media     <remote>:swoofy-public/<env>/media
+rclone sync ./public/thumbnail <remote>:swoofy-public/<env>/thumbnail
+rclone sync ./private/...       <remote>:swoofy-private/<env>       # private assets, if any
+bin/console theme:compile
+bin/console media:generate-thumbnails                               # optional, if not synced
+```
+The ddev media proxy (`.ddev/nginx/media.conf`) is a **local-dev** convenience only — production
+serves media from S3, so it must actually be uploaded there.
+
 # CI/CD
 Two equivalent pipelines **build the image → trigger a Coolify deploy webhook**, keyed by branch:
 
