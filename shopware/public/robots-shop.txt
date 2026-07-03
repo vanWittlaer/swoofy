@@ -1,0 +1,17 @@
+User-agent: *
+
+Allow: /
+
+Disallow: /*?
+
+Allow: /*theme/
+
+Allow: /media/*?ts=
+
+Disallow: /account/
+Disallow: /checkout/
+Disallow: /widgets/
+Allow: /widgets/cms/
+Allow: /widgets/menu/offcanvas
+
+Sitemap: https://swoofy.my-demo.shop/sitemap.xml

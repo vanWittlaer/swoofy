@@ -1,0 +1,13 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+secrets.auto.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# saved plan files embed the full tfstate (all secrets in plaintext) — never commit
+*.tfplan

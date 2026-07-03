@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ef90a1e5eaca9d350f0dca21a11b2d45",
+    "content-hash": "9cb9dfc57ce2f65886b6b4dcc26ee72c",
     "packages": [
         {
             "name": "altcha-org/altcha",
@@ -123,6 +123,71 @@
                 }
             ],
             "time": "2026-04-18T17:06:10+00:00"
+        },
+        {
+            "name": "async-aws/s3",
+            "version": "3.3.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/async-aws/s3.git",
+                "reference": "26bf7e498df4fd135fb2c32cbaa5ba92c0615fa3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/async-aws/s3/zipball/26bf7e498df4fd135fb2c32cbaa5ba92c0615fa3",
+                "reference": "26bf7e498df4fd135fb2c32cbaa5ba92c0615fa3",
+                "shasum": ""
+            },
+            "require": {
+                "async-aws/core": "^1.22",
+                "ext-dom": "*",
+                "ext-filter": "*",
+                "ext-hash": "*",
+                "ext-simplexml": "*",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^11.5.42",
+                "symfony/error-handler": "^7.3.2 || ^8.0",
+                "symfony/phpunit-bridge": "^7.3.2 || ^8.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "3.3-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "AsyncAws\\S3\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "S3 client, part of the AWS SDK provided by AsyncAws.",
+            "keywords": [
+                "amazon",
+                "async-aws",
+                "aws",
+                "s3",
+                "sdk"
+            ],
+            "support": {
+                "source": "https://github.com/async-aws/s3/tree/3.3.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/jderusse",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nyholm",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-04-29T10:05:33+00:00"
         },
         {
             "name": "brick/math",
@@ -3134,6 +3199,64 @@
                 "source": "https://github.com/thephpleague/flysystem/tree/3.35.1"
             },
             "time": "2026-06-25T06:52:23+00:00"
+        },
+        {
+            "name": "league/flysystem-async-aws-s3",
+            "version": "3.31.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thephpleague/flysystem-async-aws-s3.git",
+                "reference": "6928568d3fe24afc4d7d583fc1844d0c1d07651b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thephpleague/flysystem-async-aws-s3/zipball/6928568d3fe24afc4d7d583fc1844d0c1d07651b",
+                "reference": "6928568d3fe24afc4d7d583fc1844d0c1d07651b",
+                "shasum": ""
+            },
+            "require": {
+                "async-aws/s3": "^1.5 || ^2.0 || ^3.0",
+                "league/flysystem": "^3.10.0",
+                "league/mime-type-detection": "^1.0.0",
+                "php": "^8.0.2"
+            },
+            "conflict": {
+                "symfony/http-client": "<5.2"
+            },
+            "require-dev": {
+                "async-aws/simple-s3": "^2.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "League\\Flysystem\\AsyncAwsS3\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Frank de Jonge",
+                    "email": "info@frankdejonge.nl"
+                }
+            ],
+            "description": "AsyncAws S3 filesystem adapter for Flysystem.",
+            "keywords": [
+                "Flysystem",
+                "async-aws",
+                "aws",
+                "file",
+                "files",
+                "filesystem",
+                "s3",
+                "storage"
+            ],
+            "support": {
+                "source": "https://github.com/thephpleague/flysystem-async-aws-s3/tree/3.31.0"
+            },
+            "time": "2026-01-23T15:30:45+00:00"
         },
         {
             "name": "league/flysystem-local",

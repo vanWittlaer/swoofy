@@ -12,9 +12,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Least-privilege default token scope; the build jobs widen to packages:write below
+# (a called reusable workflow's token can't exceed the caller job's grant).
+permissions:
+  contents: read
+
 jobs:
   build_staging:
     if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature')
+    permissions:
+      contents: read
+      packages: write
     uses: ./.github/workflows/build-docker.yml
     with:
       environment: stage
@@ -23,6 +31,9 @@ jobs:
 
   build_production:
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
     uses: ./.github/workflows/build-docker.yml
     with:
       environment: prod

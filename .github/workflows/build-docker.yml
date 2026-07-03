@@ -14,6 +14,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Convert repo name to lowercase
         run: |
@@ -33,6 +36,7 @@ jobs:
         with:
           context: ./shopware
           file: ./shopware/docker/Dockerfile
+          target: ${{ inputs.environment == 'prod' && 'final-prod' || 'final-protected' }}
           push: true
           provenance: false
           cache-from: type=gha

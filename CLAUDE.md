@@ -64,8 +64,8 @@ The production image is built from `shopware/docker/Dockerfile` (multi-stage, us
 
 Runtime topology (decomposed model, separate Coolify resources):
 - **web** — the image above
-- **worker/scheduler** — `shopware/docker/worker/docker-compose.yml`: two `messenger:consume async low_priority` workers + one `scheduled-task:run` scheduler, all reusing the web image, with prod state bind-mounted from `${SERVER_VOLUME}`
-- **shell** (optional) — `shopware/docker/shell/`: a small Wolfi container adding bash, mysqldump, rclone, etc. (the Shopware base image intentionally has no bash) for backups/maintenance
+- **worker/scheduler** — managed by the OpenTofu stack (`infra/modules/shopware-stack/workers.tf`): a `coolify_service` (docker compose) running two `messenger:consume async low_priority` workers + one `scheduled-task:run` scheduler, reusing the web image, with `var/log` bind-mounted from the host
+- **shell** (optional) — the ops/maintenance sidecar (bash + `shopware-cli` + rclone for backups/maintenance; the Shopware base image intentionally has no bash) lives in its **own standalone repo**, `vanwittlaer/shopware-ops-shell`, and is consumed here as a published image (`ghcr.io/vanwittlaer/shopware-ops-shell`), wired by the OpenTofu backup stack. It is **not** built from this repo.
 
 Local `compose.yaml`/`compose.override.yaml` are the Shopware-recipe dev services (MariaDB, OpenSearch, Mailpit) — **not** the production topology.
 
@@ -100,7 +100,7 @@ tofu destroy -var-file=production.tfvars -var-file=staging.tfvars
 
 - `main.tf` instantiates `modules/shopware-stack` twice (production + staging) — one Coolify project, two environments.
 - The module builds: `web` + N `worker` + `scheduler` (all one image), `mariadb`, 2× `redis` (cache/session — Symfony lock uses the shared DB via `LOCK_DSN`, no dedicated lock Redis), `rabbitmq` and `elasticsearch` (own `docker_compose_raw`), `mailpit` (staging only).
-- **State is a local file** (`tofu.tfstate`, `backend "local"` in `versions.tf`) — single-machine; swap for a remote locked backend for real prod.
+- **State is a local file** (`tofu.tfstate`, `backend "local"` in `versions.tf`) — single-machine; swap for a remote locked backend for real prod. Keep backup copies of the gitignored `secrets.auto.tfvars` (the only place the owned secrets live) and `tofu.tfstate` (or rely on `tofu import` — provider v0.1.7 supports it — to re-adopt resources if state is lost).
 - Most credentials are Coolify-generated; the only secrets you own are Shopware's `app_secret` and `instance_id` (kept stable across deploys), in the gitignored `secrets.auto.tfvars`.
 - The Coolify provider has **no `entrypoint` argument** for image apps — workers use `start_command`; see the "Risk W" discovery notes in `apps.tf`/`README.md` if a worker boots the web server instead of `messenger:consume`.
 

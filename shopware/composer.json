@@ -5,6 +5,7 @@
     "composer-runtime-api": "^2.0",
     "frosh/altcha-captcha": "^1.9",
     "frosh/tools": "^3.1",
+    "league/flysystem-async-aws-s3": "^3.31",
     "shopware/administration": "*",
     "shopware/core": "~v6.7.1",
     "shopware/deployment-helper": "^0.0.27",

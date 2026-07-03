@@ -62,14 +62,18 @@ The command will create a subfolder `shopware/docker` that contains
 the Dockerfile provided Shopware. Do not modify this file.
 
 ## Worker
-Inside the `shopware/docker` folder, there is a subfolder `worker`
-with a `docker-compose.yml` defining the layout of your worker and
-scheduler services.
+The worker/scheduler services are defined and deployed by the OpenTofu stack
+(`infra/modules/shopware-stack/workers.tf`) as a Coolify docker-compose service:
+two `messenger:consume` workers + one `scheduled-task:run` scheduler, reusing the
+web image.
 
 ## Shell
-As the Shopware provided docker container does not include bash,
-a small shell container is defined in the subfolder 
-`shopware/docker/shel`.
+The Shopware container image ships no bash, no `mysqldump` and no S3 client, so
+backups/maintenance run in a small **ops/maintenance sidecar** image. It lives in its
+own standalone, generally-available repo — **[`shopware-ops-shell`](https://github.com/vanwittlaer/shopware-ops-shell)**
+(Wolfi + bash + `shopware-cli` + rclone) — and is consumed here as a published
+image (`ghcr.io/vanwittlaer/shopware-ops-shell`), not built from this repo. See the
+[backup](#backup-optional) section below for how the OpenTofu stack wires it.
 
 ## Pipeline
 A gitlab pipeline is used for the build and deploy steps. defined
@@ -113,6 +117,17 @@ MESSENGER_TRANSPORT_LOW_PRIORITY_DSN=amqp://user:password@rabbitmq-container:567
 #
 INSTANCE_ID=<your unique instance id>
 APP_SECRET=<your app secret>
+#
+# backup bucket (offsite, different location than the source S3) — used by bin/backup-db.sh & bin/backup-s3.sh
+#
+S3_BACKUP_BUCKET=<backup bucket name>
+S3_BACKUP_REGION=<e.g. fsn1>
+S3_BACKUP_DOMAIN=<e.g. https://fsn1.your-objectstorage.com>
+S3_BACKUP_PATH=<in-bucket prefix, e.g. production>
+S3_BACKUP_ACCESS_KEY_ID=<backup bucket credentials>
+S3_BACKUP_SECRET_ACCESS_KEY=
+DB_BACKUPS_TO_KEEP=60
+S3_BACKUP_RETAIN_DAYS=30
 ```
 ## Resources
 ### webserver
@@ -121,17 +136,21 @@ post-deployment command:
 
 `vendor/bin/shopware-deployment-helper run --skip-theme-compile -n`
 ### worker
-On shutdown/redeploy, the workers need to be cooled down carefully. Add this script `shopware/bin/docker-shutdown.sh` to
-the custom build command for the workers:
-
-`docker compose -f ./shopware/docker/worker/docker-compose.yml build && ./shopware/bin/docker-shutdown.sh <worker-resource-uuid`
-
-This script takes the UUID of your worker resource as an input.
-### bash shell (optional)
-The Shopware provided container does, on purpose, not contain bash.
-However bash might be needed or desired to run e.g. backup scripts.
-A small container defined in `shopware/docker/shell` provides bash
-and some other useful tools like mysqldump.
+Workers drain gracefully on redeploy without any shutdown script: on SIGTERM, Symfony Messenger
+finishes the in-flight message and exits, so a stop signal + grace period is all that's needed.
+The OpenTofu stack wires this on the worker/scheduler service
+(`infra/modules/shopware-stack/workers.tf`: `stop_signal: SIGTERM` + `stop_grace_period: 120s`).
+### backup (optional)
+Scheduled backups are also defined and deployed by the OpenTofu stack
+(`infra/modules/shopware-stack/backup.tf`), toggled per-env via `enable_backup`.
+The service runs the env-agnostic **ops/maintenance sidecar** image idle
+(`tail -f /dev/null`) — built and published by its own repo
+([`shopware-ops-shell`](https://github.com/vanwittlaer/shopware-ops-shell)), pointed at
+here via the `backup_image` / `backup_image_tag` tfvars. Coolify Scheduled Tasks `exec`
+`bin/backup-db.sh` and `bin/backup-s3.sh` into the running container on cron — the former
+dumps the database (via `shopware-cli project dump`) to the backup bucket, the latter
+mirrors the S3 buckets offsite. See `infra/README.md` for the schedules and bucket
+configuration.
 ### mysql
 #### Image
 I have successfully tested with `mysql:8.0.40-debian`. 

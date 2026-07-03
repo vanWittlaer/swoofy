@@ -6,3 +6,17 @@
 .DS_Store
 .history/*
 .vscode/*
+/docs/
+
+# The ops/maintenance sidecar lives in its own repo (vanwittlaer/shopware-ops-shell);
+# it's checked out here as a sibling folder but is NOT part of this repo.
+/shopware-ops-shell/
+
+# Secrets / sensitive artifacts — never commit (defense-in-depth). A saved tofu plan
+# embeds the full state incl. plaintext secrets; the rest are key/credential files.
+*.tfplan
+.env.local
+.env.*.local
+*.pem
+*.key
+id_rsa*
