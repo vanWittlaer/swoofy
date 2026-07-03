@@ -1,13 +1,18 @@
 Shopware 6 Self-Hosting with Coolify
 ====================================
-# About
-This repository provides a simple though fully working example
-for a self-hosted Shopware 6 instance using Coolify as a self-hosted 
-PaaS.
 
-Note this simple setup stores all media files on the local filesystem.
-This is not recommended for production. Instead, S3 should be used
-for these.
+# About
+This repository is a fully working **reference for self-hosting Shopware 6 on
+[Coolify](https://coolify.io)** (a self-hosted PaaS), with the entire production **and**
+staging stack provisioned as code with **[OpenTofu](https://opentofu.org)** (`infra/`) —
+no clicking resources together in the Coolify UI, no hand-maintained `.env.local`.
+
+Media is stored on **S3-compatible object storage** (not the local filesystem), so the app
+containers stay stateless and horizontally scalable.
+
+The Shopware application itself lives in the [`shopware/`](shopware/) subfolder; everything
+around it is lifecycle tooling — local dev (ddev), the production image (`shopware/docker`),
+the OpenTofu stack (`infra/`), and CI/CD (GitHub Actions + GitLab).
 
 # Local Setup
 Use ddev, devenv or Dockware to create a local environment.
@@ -50,138 +55,124 @@ All addons follow their respective default configurations,
 with the exception of Redis. Note the updated configuration in
 `.ddev/redis/redis.conf`.
 
-# Preparation for Coolify
-## shopware/docker
-Coolify works with a Docker container that is created based
-on Shopware's shopware/docker project. To install shopware/docker
-run this command inside your ddev web container:
+# The production image (shopware/docker)
+Coolify runs a Docker image built from Shopware's `shopware/docker` package. Install it
+inside the ddev web container with `composer require shopware/docker`; it generates
+`shopware/docker/Dockerfile` — **do not hand-edit the generated stages**. This repo extends
+it with a multi-stage split:
 
-`composer require shopware/docker`
+- **`final-prod`** — the base image plus custom nginx snippets (`shopware/docker/nginx`:
+  real-IP from the proxy, redirects, a prohibitive `robots.txt`). Used for production.
+- **`final-protected`** — `final-prod` plus HTTP basic-auth (`shopware/docker/nginx-basic-auth`).
+  Used for staging/feature so non-prod hosts sit behind a login.
 
-The command will create a subfolder `shopware/docker` that contains
-the Dockerfile provided Shopware. Do not modify this file.
+The image is **built in CI** (see [CI/CD](#cicd)) and pushed to a registry — the OpenTofu
+stack deploys it by reference, it is not built on the server.
 
-## Worker
-The worker/scheduler services are defined and deployed by the OpenTofu stack
-(`infra/modules/shopware-stack/workers.tf`) as a Coolify docker-compose service:
-two `messenger:consume` workers + one `scheduled-task:run` scheduler, reusing the
-web image.
+## Runtime topology
+The stack is decomposed into separate Coolify resources, all managed by OpenTofu:
 
-## Shell
-The Shopware container image ships no bash, no `mysqldump` and no S3 client, so
-backups/maintenance run in a small **ops/maintenance sidecar** image. It lives in its
-own standalone, generally-available repo — **[`shopware-ops-shell`](https://github.com/vanwittlaer/shopware-ops-shell)**
-(Wolfi + bash + `shopware-cli` + rclone) — and is consumed here as a published
-image (`ghcr.io/vanwittlaer/shopware-ops-shell`), not built from this repo. See the
-[backup](#backup-optional) section below for how the OpenTofu stack wires it.
+- **web** — the image above, nginx on port 8000.
+- **worker/scheduler** — `infra/modules/shopware-stack/workers.tf`: a Coolify docker-compose
+  service running two `messenger:consume` workers + one `scheduled-task:run` scheduler,
+  reusing the web image. Workers drain gracefully on redeploy (SIGTERM + a grace period).
+- **shell / backups** (optional) — an env-agnostic ops/maintenance sidecar image from the
+  standalone [`shopware-ops-shell`](https://github.com/vanwittlaer/shopware-ops-shell) repo
+  (Wolfi + bash + `shopware-cli` + rclone), **not built here**. See [Backups](#backups-optional).
 
-## Pipeline
-A gitlab pipeline is used for the build and deploy steps. defined
-in detail in `.gitlab-ci.yml`.
+# Provisioning the Coolify stack (OpenTofu)
+The production and staging stacks are **Infrastructure-as-Code** in [`infra/`](infra/). One
+module (`infra/modules/shopware-stack`) is instantiated once per environment and creates the
+**web** app, the **worker/scheduler** service, **MariaDB**, **cache + session Redis**,
+**RabbitMQ**, **Elasticsearch**, **Mailpit** (staging), the **S3** media wiring + CORS, and
+the optional **backup** stack.
 
-# Coolify Server Setup
-## Admin Server
-Check in with Coolify's cloud, or create your own Coolify admin server.
-## App Server
-Get a cloud server from Hetzner or the likes. Use a Ubuntu distribution.
+All application env — `DATABASE_URL`, `REDIS_*`, `MESSENGER_*` (RabbitMQ), `APP_SECRET`,
+`INSTANCE_ID`, the `S3_*` keys, … — is **computed and injected by OpenTofu**, so there is no
+`.env.local` to copy by hand.
 
-## Persistent Storage
-## .env.local
-```dotenv
-APP_DEBUG=0
-APP_URL=https://example.com
-#
-# performance
-#
-APP_URL_CHECK_DISABLED=1
-BLUE_GREEN_DEPLOYMENT=0
-SHOPWARE_CACHE_ID=some-simple-string
-SQL_SET_DEFAULT_SESSION_VARIABLES=0
-#
-# set because behind Coolify traefik
-TRUSTED_PROXIES=127.0.0.1/0
-#
-# credentials
-#
-DATABASE_URL=<copy from your mysql resource>
-#
-REDIS_CACHE_URL=<copy from your redis cache resource>
-#
-REDIS_SESSION_URL=<copy from your redis session resource>
-#
-MESSENGER_TRANSPORT_DSN=amqp://user:password@rabbitmq-container:5672/%2f/async
-MESSENGER_TRANSPORT_FAILURE_DSN=amqp://user:password@rabbitmq-container:5672/%2f/failed
-MESSENGER_TRANSPORT_LOW_PRIORITY_DSN=amqp://user:password@rabbitmq-container:5672/%2f/low_priority
-#
-# secrets
-#
-INSTANCE_ID=<your unique instance id>
-APP_SECRET=<your app secret>
-#
-# backup bucket (offsite, different location than the source S3) — used by bin/backup-db.sh & bin/backup-s3.sh
-#
-S3_BACKUP_BUCKET=<backup bucket name>
-S3_BACKUP_REGION=<e.g. fsn1>
-S3_BACKUP_DOMAIN=<e.g. https://fsn1.your-objectstorage.com>
-S3_BACKUP_PATH=<in-bucket prefix, e.g. production>
-S3_BACKUP_ACCESS_KEY_ID=<backup bucket credentials>
-S3_BACKUP_SECRET_ACCESS_KEY=
-DB_BACKUPS_TO_KEEP=60
-S3_BACKUP_RETAIN_DAYS=30
-```
-## Resources
-### webserver
-To execute the post-deployment tasks (like plugin updates, theme compile, migrations etc.) add this to the 
-post-deployment command:
+## Prerequisites
+- A running **Coolify v4** with the API enabled + a token, and a registered **server** (its UUID).
+- A **private registry** holding the CI-built web image (ghcr.io / GitLab registry).
+- **S3 buckets** for media (the public bucket must serve objects public-read); plus a backup
+  bucket if backups are enabled.
+- **OpenTofu ≥ 1.7** — baked into the ddev web container, so run `tofu` from `ddev ssh`.
 
-`vendor/bin/shopware-deployment-helper run --skip-theme-compile -n`
-### worker
-Workers drain gracefully on redeploy without any shutdown script: on SIGTERM, Symfony Messenger
-finishes the in-flight message and exits, so a stop signal + grace period is all that's needed.
-The OpenTofu stack wires this on the worker/scheduler service
-(`infra/modules/shopware-stack/workers.tf`: `stop_signal: SIGTERM` + `stop_grace_period: 120s`).
-### backup (optional)
-Scheduled backups are also defined and deployed by the OpenTofu stack
-(`infra/modules/shopware-stack/backup.tf`), toggled per-env via `enable_backup`.
-The service runs the env-agnostic **ops/maintenance sidecar** image idle
-(`tail -f /dev/null`) — built and published by its own repo
-([`shopware-ops-shell`](https://github.com/vanwittlaer/shopware-ops-shell)), pointed at
-here via the `backup_image` / `backup_image_tag` tfvars. Coolify Scheduled Tasks `exec`
-`bin/backup-db.sh` and `bin/backup-s3.sh` into the running container on cron — the former
-dumps the database (via `shopware-cli project dump`) to the backup bucket, the latter
-mirrors the S3 buckets offsite. See `infra/README.md` for the schedules and bucket
-configuration.
-### mysql
-#### Image
-I have successfully tested with `mysql:8.0.40-debian`. 
-(Note the debian flavour comes with the `mysqlbinlog` command installed.)
-#### Ports Mappings
-`4306:3306` only needed if you plan to ssh-tunnel to the database, leave it unfilled otherwise.
-#### Custom Mysql Configuration
-```text
-[mysqld]
-default-time-zone='+00:00'
-group_concat_max_len=320000
-innodb_buffer_pool_size=1G
-sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
-```
-### redis for Cache
-#### Custom Redis Configuration
-```text
-appendonly no
-save ""
-maxmemory-policy volatile-lru
-```
-### redis for Session
-#### Custom Redis Configuration
-```text
-appendonly yes
-maxmemory-policy allkeys-lru
+## Apply
+```bash
+cd infra
+cp secrets.auto.tfvars.example secrets.auto.tfvars   # fill in the few secrets you own
+tofu init
+tofu fmt -recursive && tofu validate
+tofu apply -var-file=production.tfvars -var-file=staging.tfvars
 ```
 
-### RabbitMQ
-#### RabbitMQ Management
-In the Configuration, click `Edit Compose File` and add `15672:15672`
-to the ports section. Restart.
-Create an ssh tunnel to 127.0.0.1:15672 to access RabbitMQ Management
-from your local machine.
+The only secrets you provide (in the git-ignored `secrets.auto.tfvars`) are `server_uuid`,
+`app_secret`, `instance_id`, `rabbitmq_password`, the S3 access keys, `mailer_dsn`, and — for
+staging — `mailpit_ui_auth` (and the backup-bucket keys when backups are on). **Coolify
+generates the DB/Redis passwords.** Per-environment **non-secret** settings (domains, image
+tags, feature toggles, DB/Redis tuning) live in `production.tfvars` / `staging.tfvars`.
+
+State is a **local backend** (`infra/tofu.tfstate`) — fine for a single operator; swap for a
+remote, locked backend for a team. See [`infra/README.md`](infra/README.md) for the full
+runbook and [`infra/FINDINGS.md`](infra/FINDINGS.md) for the provider/Coolify quirks.
+
+## One-time manual steps OpenTofu can't express
+- **`chown` the log dir** on the host so the container user (UID 82) can write:
+  `mkdir -p /data/shopware/<env>/var/log && chown -R 82:82 /data/shopware/<env>/var/log`.
+- **DB / Redis tuning** — set `my.cnf` / `redis.conf` in the Coolify UI; the current Coolify
+  version rejects the provider's extended-fields update (see FINDINGS). The intended values
+  live in the `mariadb_conf` / `redis_conf` tfvars, e.g. for MariaDB:
+  ```
+  [mysqld]
+  default-time-zone='+00:00'
+  group_concat_max_len=320000
+  innodb_buffer_pool_size=1G
+  sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+  ```
+  Redis cache: `appendonly no` / `save ""` / `maxmemory-policy volatile-lru`.
+  Redis session: `appendonly yes` / `maxmemory-policy allkeys-lru` (must not evict sessions).
+- **Build the Elasticsearch indices** in every env with `enable_elasticsearch = true`:
+  `bin/console es:index` (storefront) + `bin/console es:admin:index` (admin), then redeploy
+  the workers. Until built, search falls back to the DB, so nothing 500s.
+- **Staging basic-auth** — create the `.htpasswd` on the host (bind-mounted into the web app
+  at `/var/www/auth`), so the hash never enters the repo or image:
+  ```bash
+  mkdir -p /data/shopware/staging/auth
+  htpasswd -nbB <user> '<password>' > /data/shopware/staging/auth/.htpasswd
+  chown -R 82:82 /data/shopware/staging/auth
+  ```
+- **DNS** — point the storefront (and the staging Mailpit) domains at the server.
+
+## Backups (optional)
+Scheduled backups (`infra/modules/shopware-stack/backup.tf`) are toggled per-env via
+`enable_backup`. The service runs the [`shopware-ops-shell`](https://github.com/vanwittlaer/shopware-ops-shell)
+image idle; Coolify **Scheduled Tasks** `exec` `bin/backup-db.sh` (DB dump via
+`shopware-cli project dump`) and `bin/backup-s3.sh` (offsite S3 mirror) into it on cron.
+Point `backup_image` / `backup_image_tag` at the published image and set the backup-bucket
+coordinates/credentials; see `infra/README.md` for schedules and bucket configuration.
+
+# CI/CD
+Two equivalent pipelines **build the image → trigger a Coolify deploy webhook**, keyed by branch:
+
+| Branch       | Environment | GitHub Actions (primary)  | GitLab (alt)      |
+|--------------|-------------|---------------------------|-------------------|
+| `main`       | prod        | build + deploy on push    | manual            |
+| `develop`    | staging     | build + deploy on push    | manual            |
+| `feature/**` | staging     | build only                | build only        |
+
+- **GitHub** (`.github/workflows/ci-cd.yml`) is primary and runs automatically on push,
+  pushing images to **ghcr.io**. `main` builds the `final-prod` image, `develop`/`feature`
+  the `final-protected` (basic-auth) image.
+- **GitLab** (`.gitlab-ci.yml`) is an equivalent manual alternative, pushing to the GitLab
+  registry.
+- **Post-deploy command** on the server:
+  `vendor/bin/shopware-deployment-helper run --skip-theme-compile -n`
+
+# Reference: management access
+Keep the host firewall to **22 / 80 / 443** only. Internal services are reached over an SSH
+tunnel, not public ports:
+
+- **MariaDB** — host port set by `mariadb_public_port` (tfvars); tunnel to it for a SQL client.
+- **RabbitMQ management** — host port set by `rabbitmq_mgmt_port`; tunnel to `127.0.0.1:<port>`
+  to reach the management UI (AMQP 5672 stays internal).
