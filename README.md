@@ -172,26 +172,27 @@ Nothing to pre-seed in S3 — Shopware populates it.
 First match the source's Shopware version to this repo's `composer.lock` (up/downgrade the source
 if needed), then bring over **both** the database and the media.
 
-**Database** — dump the source and load it into the new MariaDB. Reach it over an SSH tunnel to
-`mariadb_public_port`, or run the import from a maintenance/shell container on the server:
+**Database** — easiest is **Coolify's "Import Database" UI** on the MariaDB resource: upload the
+source dump and Coolify loads it. (By hand instead: over an SSH tunnel to `mariadb_public_port`, or
+from a maintenance/shell container, `zcat dump.sql.gz | mysql -u shopware -p shopware`.) Then align
+the schema and fix up the data:
 ```bash
-shopware-cli project dump --output dump.sql.gz ...   # (or mysqldump on the source)
-zcat dump.sql.gz | mysql -h 127.0.0.1 -P <mariadb_public_port> -u shopware -p shopware
+shopware-cli project dump --output dump.sql.gz ...   # produce the dump on the source
 bin/console database:migrate --all                   # align the schema to the deployed version
 # rewrite the sales_channel_domain rows to the new prod/staging URLs, then:
 bin/console cache:clear
 ```
 (The ddev `post-import-db` hook does the same domain rewrite locally — mirror it here.)
 
-**Filesystem (media → S3)** — the media must live in the new buckets under Shopware's key layout
-(mind the in-bucket prefix `S3_ROOT_PREFIX = <env>/`). From a local-disk source, sync it up; from
-an existing S3 source, sync bucket→bucket:
+**Filesystem (media → S3)** — sync the **media** (and any private assets) into the new buckets
+under Shopware's key layout (mind the in-bucket prefix `S3_ROOT_PREFIX = <env>/`). **Thumbnails do
+NOT need syncing — regenerate them** (below). From a local-disk source, sync up; from an existing S3
+source, sync bucket→bucket:
 ```bash
-rclone sync ./public/media     <remote>:swoofy-public/<env>/media
-rclone sync ./public/thumbnail <remote>:swoofy-public/<env>/thumbnail
-rclone sync ./private/...       <remote>:swoofy-private/<env>       # private assets, if any
+rclone sync ./public/media <remote>:swoofy-public/<env>/media
+rclone sync ./private/...   <remote>:swoofy-private/<env>       # private assets, if any
 bin/console theme:compile
-bin/console media:generate-thumbnails                               # optional, if not synced
+bin/console media:generate-thumbnails                          # regenerate thumbnails (no sync)
 ```
 The ddev media proxy (`.ddev/nginx/media.conf`) is a **local-dev** convenience only — production
 serves media from S3, so it must actually be uploaded there.
