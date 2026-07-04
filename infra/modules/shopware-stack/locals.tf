@@ -12,10 +12,14 @@ locals {
   s3_root_raw    = var.s3.path_prefix != null ? var.s3.path_prefix : var.environment_name
   s3_root_prefix = local.s3_root_raw == "" ? "" : "${trimsuffix(local.s3_root_raw, "/")}/"
 
-  # Mail: staging uses the in-project Mailpit (SMTP on 1025, reached on the shared network by
-  # its container name); production uses the secret SMTP DSN (var.mailer_dsn). try() keeps
-  # this valid when mailpit isn't created (production → count 0).
-  mailer_dsn = var.enable_mailpit ? "smtp://${try(coolify_application_docker_image.mailpit[0].uuid, "mailpit")}:1025" : var.mailer_dsn
+  # Mail: staging uses the in-project Mailpit (SMTP on 1025); production uses the secret SMTP
+  # DSN (var.mailer_dsn). Mailpit is reached by a STABLE custom network alias, not its UUID:
+  # Coolify names an application container "<uuid>-<deploy-id>" and registers no bare-uuid
+  # alias, so "smtp://<uuid>:1025" fails to resolve (getaddrinfo). We pin the alias on the
+  # mailpit resource (services.tf, custom_network_aliases = local.mailpit_host) and address
+  # that here — the two must stay in sync, hence the shared local.
+  mailpit_host = "mailpit"
+  mailer_dsn   = var.enable_mailpit ? "smtp://${local.mailpit_host}:1025" : var.mailer_dsn
 
   # Shared local-exec for the connect_to_docker_network null_resources (rabbitmq + workers):
   # PATCH the flag on via the Coolify API + restart so the service joins the shared network.

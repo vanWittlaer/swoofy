@@ -128,6 +128,10 @@ resource "coolify_application_docker_image" "mailpit" {
   environment_name = var.environment_name
   docker_image     = "axllent/mailpit"
   ports_exposes    = "8025,1025"
+  # Stable DNS alias on the shared network so web/workers can reach SMTP at a fixed name.
+  # Without it, only the "<uuid>-<deploy-id>" container name resolves — never the bare uuid —
+  # and MAILER_DSN (locals.tf, local.mailpit_host) can't connect. Keep in sync with that local.
+  custom_network_aliases = local.mailpit_host
   # Public FQDN for the web UI → Traefik routes it to Mailpit's 8025 (the :8025 suffix, same
   # form as the web app's domains). Omitted when mailpit_domain is empty (internal-only).
   domains              = var.mailpit_domain == "" ? null : "${var.mailpit_domain}:8025"
