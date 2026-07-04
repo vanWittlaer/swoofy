@@ -36,6 +36,6 @@ resource "coolify_application_docker_image" "web" {
   # then migrations / plugin refresh / asset:install on subsequent deploys. Idempotent —
   # the helper only runs system:install when the system isn't installed. Only the web app
   # runs it (not workers/scheduler) to avoid concurrent install/migration races.
-  post_deployment_command = "vendor/bin/shopware-deployment-helper run --skip-theme-compile -n"
+  post_deployment_command = "vendor/bin/shopware-deployment-helper run -n"
   instant_deploy          = true
 }

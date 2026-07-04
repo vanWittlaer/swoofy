@@ -212,7 +212,7 @@ Two equivalent pipelines **build the image → trigger a Coolify deploy webhook*
 - **GitLab** (`.gitlab-ci.yml`) is an equivalent manual alternative, pushing to the GitLab
   registry.
 - **Post-deploy command** on the server:
-  `vendor/bin/shopware-deployment-helper run --skip-theme-compile -n`
+  `vendor/bin/shopware-deployment-helper run -n`
 
 # Reference: management access
 Keep the host firewall to **22 / 80 / 443** only. Internal services are reached over an SSH

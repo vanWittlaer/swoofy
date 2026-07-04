@@ -82,7 +82,7 @@ Both pipelines do the same two stages — **build image → POST to a Coolify de
 - **GitHub** (`.github/workflows/ci-cd.yml`) is the primary pipeline: reusable `build-docker.yml` pushes to **ghcr.io** (`ghcr.io/<repo>/<env>:latest` + `:<sha>`); `deploy-coolify.yml` curls the Coolify webhook. Runs automatically on push.
 - **GitLab** (`.gitlab-ci.yml`) is an equivalent alternative: pushes to `registry.gitlab.com`, all jobs `when: manual`.
 - Build arg `SHOPWARE_PACKAGES_TOKEN` (secret `BEARER_PACKAGES_SHOPWARE`) authenticates Shopware commercial packages. Deploy is just an authenticated GET to `COOLIFY_DEPLOY_URL?uuid=...&force=true`.
-- Post-deploy command on the server (per README): `vendor/bin/shopware-deployment-helper run --skip-theme-compile -n`.
+- Post-deploy command on the server (per README): `vendor/bin/shopware-deployment-helper run -n` (theme is compiled at deploy time; the earlier `--skip-theme-compile` was dropped so the S3 theme always matches the DB).
 
 ## Infrastructure as Code (`infra/`)
 
