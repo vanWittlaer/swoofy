@@ -1,6 +1,6 @@
 resource "coolify_project" "shopware" {
-  name        = "Swoofy"
-  description = "Shopware-on-Coolify OpenTofu spike (managed by OpenTofu)"
+  name        = var.project_name
+  description = var.project_description
 }
 
 # "production" exists by default in a new Coolify project; create "staging".

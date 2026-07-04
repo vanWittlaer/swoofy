@@ -11,6 +11,22 @@ variable "coolify_token" {
   sensitive   = true
 }
 
+# --- Coolify project ----------------------------------------------------------
+# One Coolify project holds both environments (production default + staging). Name and
+# description are parameterized so the stack isn't tied to a specific project — set them
+# per adopting project in <env>.tfvars (project-wide, non-secret; kept with backup_image).
+
+variable "project_name" {
+  type        = string
+  description = "Coolify project name that owns the production + staging environments."
+}
+
+variable "project_description" {
+  type        = string
+  default     = "Shopware on Coolify (managed by OpenTofu)"
+  description = "Coolify project description."
+}
+
 # --- Backup image (environment-agnostic; one tag serves prod + staging) -------
 variable "backup_image" {
   type        = string

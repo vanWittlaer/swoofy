@@ -1,3 +1,6 @@
+# Project-wide (non-secret, not per-env): the Coolify project that owns both environments.
+project_name = "Swoofy"
+
 # Production environment settings (non-secret). Secrets live in secrets.auto.tfvars.
 production = {
   web_image         = "ghcr.io/vanwittlaer/swoofy/prod"
