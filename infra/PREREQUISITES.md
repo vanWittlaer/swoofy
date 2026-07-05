@@ -72,14 +72,20 @@ The provider can't express these; do them once per env after the resources exist
        ```bash
        mkdir -p <log_host_base>/<env>/var/log && chown -R 82:82 <log_host_base>/<env>/var/log
        ```
-2. [ ] **Staging basic-auth `.htpasswd`** — the staging `final-protected` image serves the
-       storefront behind HTTP basic-auth, reading `/var/www/auth/.htpasswd` from a host bind
-       mount. Create it on the host so the hash never enters the repo/image:
+2. [ ] **Staging basic-auth `.htpasswd`** — HTTP basic-auth is a **Shopware-image** feature, not
+       a tofu one: the `final-protected` build stage bakes an nginx snippet
+       (`shopware/docker/nginx-basic-auth/basic-auth.inc`) whose
+       `auth_basic_user_file` sets the container path **`/var/www/auth/.htpasswd`**. Tofu's only
+       role is the bind mount of the host dir `<log_host_base>/staging/auth` → the container's
+       `/var/www/auth` (`storage.tf`). Create the file on the host so the hash never enters the
+       repo/image, at the path the nginx snippet expects:
        ```bash
        mkdir -p <log_host_base>/staging/auth
        htpasswd -nbB <user> '<pw>' > <log_host_base>/staging/auth/.htpasswd
        chown -R 82:82 <log_host_base>/staging/auth
        ```
+       If you change the path in `basic-auth.inc`, the bind-mount target in `storage.tf` must
+       match it.
 3. [ ] **DB / Redis tuning in the Coolify UI** — `mariadb_conf` / `redis_conf` are set to `null`
        in `databases.tf` because Coolify 4.1.2 rejects the provider's extended-fields update.
        Set `my.cnf` / `redis.conf` in the Coolify UI if you need tuning.
