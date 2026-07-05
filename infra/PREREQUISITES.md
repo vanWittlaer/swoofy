@@ -2,7 +2,7 @@
 
 Everything that must be true **around** `tofu apply` that the Coolify provider can't do for
 you. Work top to bottom: [A] before the first apply, [B] one-time manual steps after it (per
-environment), [C] the recurring rule that bites everyone once.
+environment), [C] the recurring rule that applies to every later change.
 
 Placeholders: `<env>` = `production` | `staging`; `<log_host_base>` = your `log_host_base`
 tfvar (e.g. `/data/shopware`); container user is **UID 82** (the Shopware base image user).
@@ -13,14 +13,13 @@ tfvar (e.g. `/data/shopware`); container user is **UID 82** (the Shopware base i
 
 ### Control plane & tooling
 - [ ] **Coolify v4** instance running, **API enabled**, with an **API token** (Security → API
-      Tokens). Scope it as narrowly as the flow allows — a root token can read every SSH key
-      and secret Coolify holds (see the security note in the main README / your token audit).
+      Tokens). Scope it as narrowly as the apply flow allows — a `root` token can read every
+      SSH key and secret Coolify holds, so avoid `root` unless a narrower scope fails.
 - [ ] A **server registered** in Coolify for each environment; note its **`server_uuid`**.
       Same UUID for both envs = co-located; different = prod/staging on separate hosts.
-- [ ] **OpenTofu ≥ 1.7** available (this repo bakes it into the ddev web container via
-      `.ddev/web-build/Dockerfile.opentofu`; run `tofu` from `ddev ssh` → `cd infra`).
+- [ ] **OpenTofu ≥ 1.7** available to run `tofu` against this configuration.
 
-### Host sizing (learned the hard way)
+### Host sizing
 - [ ] Enough **RAM + swap** on each server. The full stack (web + workers + MariaDB + 2×Redis +
       RabbitMQ + Elasticsearch, ×N envs if co-located) is memory-hungry — ES alone runs well
       past its `-Xmx512m` heap, and a rolling deploy briefly runs **two** web containers. A host
@@ -106,5 +105,5 @@ The provider can't express these; do them once per env after the resources exist
 `workers` service (Coolify UI → Redeploy, or `POST /api/v1/deploy?uuid=…&force=true`).
 
 The `coolify_envs_bulk` vars are write-only to the provider, so tofu re-pushes them every apply
-and **can't detect drift** — always pair an env change with a manual redeploy. This is the
-single most common "I changed it but nothing happened" trap.
+and **can't detect drift** — always pair an env change with a manual redeploy. Skipping it is a
+common cause of an env change appearing to have no effect.
