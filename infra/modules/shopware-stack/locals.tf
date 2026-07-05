@@ -17,8 +17,10 @@ locals {
   # Coolify names an application container "<uuid>-<deploy-id>" and registers no bare-uuid
   # alias, so "smtp://<uuid>:1025" fails to resolve (getaddrinfo). We pin the alias on the
   # mailpit resource (services.tf, custom_network_aliases = local.mailpit_host) and address
-  # that here — the two must stay in sync, hence the shared local.
-  mailpit_host = "mailpit"
+  # that here — the two must stay in sync, hence the shared local. The alias is per-env
+  # ("mailpit-<env>") so it stays unique if an adopter enables Mailpit in BOTH environments
+  # and Coolify's predefined network turns out to be shared per-server rather than per-env.
+  mailpit_host = "mailpit-${var.environment_name}"
   mailer_dsn   = var.enable_mailpit ? "smtp://${local.mailpit_host}:1025" : var.mailer_dsn
 
   # Shared local-exec for the connect_to_docker_network null_resources (rabbitmq + workers):

@@ -46,6 +46,15 @@ tfvar (e.g. `/data/shopware`); container user is **UID 82** (the Shopware base i
       server, so Traefik can route it and issue TLS. Set these before apply or the health check
       / first deploy has nowhere to land.
 
+### Reverse-proxy trust boundary
+- [ ] Confirm the web container's port (`:8000`) is reachable **only** via Coolify's Traefik on
+      the internal docker network — never exposed directly to clients. The stack sets
+      `TRUSTED_PROXIES = "0.0.0.0/0"` (trust any upstream) so Symfony honors `X-Forwarded-Proto`
+      / `-For` from the proxy. That is safe **only** under this assumption: if the container port
+      is published directly, or fronted by a different proxy topology, a client could spoof those
+      headers. If your topology differs, narrow `TRUSTED_PROXIES` (in `static_env`) to the actual
+      proxy CIDR(s) before apply.
+
 ### Secrets & vars filled in
 - [ ] `secrets.auto.tfvars` (git-ignored) — copy from `.example` and fill:
   - `coolify_endpoint`, `coolify_token`
