@@ -12,6 +12,11 @@
 # it's checked out here as a sibling folder but is NOT part of this repo.
 /shopware-ops-shell/
 
+# The extracted OpenTofu module lives in its own repo
+# (vanWittlaer/terraform-coolify-shopware-stack); checked out here as a sibling but NOT
+# part of this repo.
+/terraform-coolify-shopware-stack/
+
 # Secrets / sensitive artifacts — never commit (defense-in-depth). A saved tofu plan
 # embeds the full state incl. plaintext secrets; the rest are key/credential files.
 *.tfplan
