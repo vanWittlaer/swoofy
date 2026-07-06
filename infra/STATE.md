@@ -35,19 +35,47 @@ If more than one person or machine runs `tofu`, put state in an **S3-compatible 
 Cloudflare R2, MinIO, Hetzner — you likely already have S3 for media). Replace the `backend
 "local"` block in your root `versions.tf` with:
 
+On **real AWS S3** it's minimal:
+
 ```hcl
 backend "s3" {
   bucket       = "your-tfstate-bucket"
   key          = "infra/tofu.tfstate"
-  region       = "us-east-1"             # a real AWS region, even for non-AWS endpoints
+  region       = "eu-central-1"          # your bucket's real AWS region
   use_lockfile = true                    # OpenTofu >= 1.10 native locking — no DynamoDB
-  # endpoints  = { s3 = "https://..." }  # set for non-AWS (R2/MinIO/Hetzner); omit on real AWS
-  # Hetzner/Ceph only: encrypt = false + skip_credentials_validation / skip_region_validation /
-  #   skip_requesting_account_id / skip_metadata_api_check / skip_s3_checksum = true
 }
 ```
 
+On **Hetzner Object Storage** (Ceph-based S3) it needs more, because Ceph doesn't implement the
+AWS-only preflight the `s3` backend assumes. Define exactly this:
+
+```hcl
+backend "s3" {
+  bucket    = "your-tfstate-bucket"
+  key       = "infra/tofu.tfstate"
+  region    = "hel1"                                         # your Hetzner LOCATION (hel1/fsn1/nbg1)
+  endpoints = { s3 = "https://hel1.your-objectstorage.com" } # the matching location endpoint
+
+  use_lockfile = true    # native conditional-write locking — verified working on Hetzner
+  encrypt      = false   # Ceph rejects server-side encryption (SSE) with HTTP 400
+  use_path_style = true  # Hetzner serves path-style URLs (bucket in the path)
+
+  skip_credentials_validation = true # no AWS STS to validate against
+  skip_requesting_account_id  = true # no IAM GetCallerIdentity
+  skip_region_validation      = true # "hel1" isn't a real AWS region name
+  skip_metadata_api_check     = true # no EC2 instance-metadata endpoint
+  skip_s3_checksum            = true # Ceph rejects the SDK's newer default checksum trailer
+}
+```
+
+Each `skip_*` turns off an AWS-specific call/validation Hetzner can't answer; `encrypt = false`
+is required (SSE 400s), and `use_path_style` matches how Hetzner addresses buckets.
+
 Then `tofu init -migrate-state`. Credentials via `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`.
+
+> On Hetzner, S3 keys are **project-wide** — a dedicated state bucket is *not* isolated from your
+> data buckets, and SSE is off. So if this state must be encrypted at rest, use the client-side
+> **encryption** block below rather than relying on the bucket.
 
 > **GitHub has no state backend.** A managed Terraform state backend is a *GitLab* feature;
 > GitHub offers none. "State on GitHub" would mean committing the state file to a repo — only safe
