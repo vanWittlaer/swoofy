@@ -83,19 +83,52 @@ Then `tofu init -migrate-state`. Credentials via `AWS_ACCESS_KEY_ID` / `AWS_SECR
 
 ## Optional: encrypt the state
 
-Only needed if state lives somewhere others could read it (a shared bucket, or a repo). OpenTofu
-≥ 1.7 encrypts it client-side — add this to the `terraform {}` block and pass the passphrase
-out-of-band (`TF_VAR_state_passphrase=…`, never committed):
+Only needed if the state lives somewhere others could read it (a shared bucket, or a repo).
+OpenTofu ≥ 1.7 can encrypt it **client-side** — before it's ever written, independent of the
+backend.
+
+You configure it with an `encryption` block placed **inside the top-level `terraform { … }`
+block** — the same block that already holds `required_version`, `required_providers` and
+`backend` (in this stack that's `versions.tf`). Add it alongside them:
 
 ```hcl
-encryption {
-  key_provider "pbkdf2" "s" { passphrase = var.state_passphrase } # >= 16 chars
-  method "aes_gcm" "s" { keys = key_provider.pbkdf2.s }
-  state { method = method.aes_gcm.s }
-  plan  { method = method.aes_gcm.s }
+terraform {
+  # required_version / required_providers / backend are already here …
+
+  encryption {
+    key_provider "pbkdf2" "state" {
+      passphrase = var.state_passphrase # >= 16 chars
+    }
+    method "aes_gcm" "state" {
+      keys = key_provider.pbkdf2.state
+    }
+    state { method = method.aes_gcm.state }
+    plan { method = method.aes_gcm.state }
+  }
 }
 ```
 
-Apply it once un-`enforced`, then add `enforced = true` to each block. **Lose the passphrase and
-the state is unrecoverable** — back it up like a root secret. (Teams: swap `pbkdf2` for the
-`aws_kms` key provider so there's no shared passphrase to distribute.)
+Declare the variable and pass the passphrase **at run time via the environment**, so it never
+lands in a file:
+
+```hcl
+variable "state_passphrase" {
+  type      = string
+  sensitive = true
+}
+```
+```bash
+export TF_VAR_state_passphrase='your-long-passphrase'
+```
+
+**Roll it out in two steps** — OpenTofu won't jump straight to "encrypted-only" against plaintext
+state:
+
+1. Add the block as above and run `tofu apply` once. This rewrites the existing state
+   **encrypted**, while still able to read the old plaintext.
+2. Add `enforced = true` inside the `state` and `plan` blocks. Now tofu **refuses** to read or
+   write unencrypted state.
+
+**If you lose the passphrase the state is unrecoverable** — back it up like a root secret. For a
+team, swap the `pbkdf2` key provider for `aws_kms` (or `gcp_kms`) so there's no shared passphrase
+to distribute.
