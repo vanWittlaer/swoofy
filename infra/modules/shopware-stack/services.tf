@@ -126,7 +126,7 @@ resource "coolify_application_docker_image" "mailpit" {
   project_uuid     = var.project_uuid
   server_uuid      = var.server_uuid
   environment_name = var.environment_name
-  docker_image     = "axllent/mailpit"
+  docker_image     = "axllent/mailpit:v1.30.3"
   ports_exposes    = "8025,1025"
   # Stable DNS alias on the shared network so web/workers can reach SMTP at a fixed name.
   # Without it, only the "<uuid>-<deploy-id>" container name resolves — never the bare uuid —
