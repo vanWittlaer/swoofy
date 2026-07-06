@@ -76,6 +76,9 @@ variable "production" {
     # defaults. mariadb_conf = my.cnf content; redis_conf keyed by role cache/session.
     mariadb_conf = optional(string, "")
     redis_conf   = optional(map(string), {})
+    # Per-env non-secret env, merged OVER the shared var.static_env for this environment (so
+    # per-env keys win). For runtime knobs the Shopware base image reads (FPM_PM_*, PHP_*, etc.).
+    static_env = optional(map(string), {})
     # S3 object storage (non-secret half; credentials are in secrets_production).
     s3 = object({
       bucket_private = string
@@ -116,6 +119,8 @@ variable "staging" {
     }), null)
     mariadb_conf = optional(string, "")
     redis_conf   = optional(map(string), {})
+    # Per-env non-secret env, merged OVER the shared var.static_env (see production.static_env).
+    static_env = optional(map(string), {})
     s3 = object({
       bucket_private = string
       bucket_public  = string

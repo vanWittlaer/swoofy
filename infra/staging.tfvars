@@ -42,6 +42,19 @@ staging = {
     CONF
   }
 
+  # Per-env runtime knobs read by the Shopware base image (php-fpm pool + php.ini), merged over
+  # the shared static_env. Same as production for now; tune down here if staging is leaner.
+  static_env = {
+    FPM_PM_MAX_CHILDREN      = "5"
+    FPM_PM_START_SERVERS     = "2"
+    FPM_PM_MIN_SPARE_SERVERS = "1"
+    FPM_PM_MAX_SPARE_SERVERS = "3"
+    FPM_PM_MAX_REQUESTS      = "0"
+    PHP_MAX_UPLOAD_SIZE      = "128m"
+    PHP_MAX_EXECUTION_TIME   = "300"
+    PHP_MEMORY_LIMIT         = "512m"
+  }
+
   # S3 object storage (credentials are in secrets.auto.tfvars). Shares production's
   # buckets — isolation comes from the auto "staging/" in-bucket prefix (path_prefix
   # defaults to "<env>/"). Set path_prefix = "" here to instead use a dedicated bucket.

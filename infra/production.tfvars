@@ -46,6 +46,19 @@ production = {
     CONF
   }
 
+  # Per-env runtime knobs read by the Shopware base image (php-fpm pool + php.ini), merged over
+  # the shared static_env. FPM_PM_* tune the web container's php-fpm; PHP_* set php.ini limits.
+  static_env = {
+    FPM_PM_MAX_CHILDREN      = "10"
+    FPM_PM_START_SERVERS     = "4"
+    FPM_PM_MIN_SPARE_SERVERS = "2"
+    FPM_PM_MAX_SPARE_SERVERS = "6"
+    FPM_PM_MAX_REQUESTS      = "0"
+    PHP_MAX_UPLOAD_SIZE      = "128m"
+    PHP_MAX_EXECUTION_TIME   = "300"
+    PHP_MEMORY_LIMIT         = "1024m"
+  }
+
   # S3 object storage (credentials are in secrets.auto.tfvars). cdn_domain "" => public
   # files are served from the bucket endpoint; set it to a CDN host to front them.
   # Objects land under the auto "production/" in-bucket prefix (path_prefix defaults to
