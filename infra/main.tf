@@ -42,6 +42,7 @@ module "production" {
   rabbitmq_mgmt_port   = 25672
   s3                   = var.production.s3
   mailer_dsn           = var.secrets_production.mailer_dsn # production: real SMTP (secret)
+  redis_url_seed       = var.secrets_production.redis_url_seed
   secrets              = var.secrets_production
 }
 
@@ -78,6 +79,7 @@ module "staging" {
   mariadb_public_port  = 5306
   rabbitmq_mgmt_port   = 35672
   s3                   = var.staging.s3
+  redis_url_seed       = var.secrets_staging.redis_url_seed
   secrets              = var.secrets_staging
 
   depends_on = [coolify_environment.staging]

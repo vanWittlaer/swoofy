@@ -192,6 +192,10 @@ variable "secrets_production" {
     # Real SMTP DSN for production outbound mail. Defaults to Symfony's null transport
     # (mail discarded) until you set a real one, so a missing value doesn't break apply.
     mailer_dsn = optional(string, "null://null")
+    # One-time Redis DSN repair seed (keyed "cache"/"session") for the v0.2.0 migration — the
+    # provider nulls redis internal_db_url on refresh and exposes no password to rebuild from.
+    # Empty on fresh installs (the module captures the real URL at create). Contains passwords.
+    redis_url_seed = optional(map(string), {})
   })
   sensitive = true
 }
@@ -209,6 +213,8 @@ variable "secrets_staging" {
     # Mailpit web-UI basic auth (MP_UI_AUTH), used when enable_mailpit=true. One or more
     # space-separated "user:password" pairs. Empty => Mailpit UI is unauthenticated.
     mailpit_ui_auth = optional(string, "")
+    # One-time Redis DSN repair seed (keyed "cache"/"session") — see secrets_production.
+    redis_url_seed = optional(map(string), {})
   })
   sensitive = true
 }
