@@ -11,7 +11,7 @@ resource "coolify_environment" "staging" {
 }
 
 module "production" {
-  source           = "github.com/vanWittlaer/terraform-coolify-shopware-stack?ref=v0.1.1"
+  source           = "github.com/vanWittlaer/terraform-coolify-shopware-stack?ref=v0.2.0"
   environment_name = "production"
   project_uuid     = coolify_project.shopware.uuid
   server_uuid      = var.secrets_production.server_uuid
@@ -46,7 +46,7 @@ module "production" {
 }
 
 module "staging" {
-  source           = "github.com/vanWittlaer/terraform-coolify-shopware-stack?ref=v0.1.1"
+  source           = "github.com/vanWittlaer/terraform-coolify-shopware-stack?ref=v0.2.0"
   environment_name = "staging"
   project_uuid     = coolify_project.shopware.uuid
   server_uuid      = var.secrets_staging.server_uuid
