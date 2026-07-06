@@ -67,8 +67,12 @@ tfvar (e.g. `/data/shopware`); container user is **UID 82** (the Shopware base i
   - `s3_backup_access_key_id` / `s3_backup_secret_access_key` — when `enable_backup = true`
 - [ ] `*.tfvars` — set `project_name` (project-wide) and the per-env `production` / `staging`
       objects (`web_image*`, `web_domain`, `s3`, `app_env`, toggles, `backup`, …).
+- [ ] **Decide state handling** (`STATE.md`) — the stack defaults to a **local, unencrypted**
+      `tofu.tfstate`, which holds every secret in plaintext. Before sharing operation or running
+      from more than one machine, at minimum enable OpenTofu native **state encryption**
+      (backend-agnostic, `tofu` ≥ 1.7) and consider a remote backend (GitLab / S3-compatible).
 - [ ] Back up `secrets.auto.tfvars` **and** `tofu.tfstate` somewhere safe — with the local
-      backend they are the only copy (see COMPATIBILITY.md on moving to a remote backend).
+      backend they are the only copy (see `STATE.md`).
 
 ---
 
