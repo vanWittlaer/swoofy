@@ -17,7 +17,7 @@ remote.
 
 ## Axis 1 — Protection: OpenTofu native state encryption (recommended, do this first)
 
-OpenTofu **≥ 1.7** (already this stack's floor, see COMPATIBILITY.md) encrypts state **and**
+OpenTofu **≥ 1.7** (already this stack's floor, see the module's [COMPATIBILITY.md](https://github.com/vanWittlaer/terraform-coolify-shopware-stack/blob/main/COMPATIBILITY.md)) encrypts state **and**
 plan files **client-side, before they touch any backend**. This is the direct answer to
 "state stores every secret in plaintext" — and because it happens client-side it is
 **independent of the backend**, so it also sidesteps object-storage encryption quirks (e.g.

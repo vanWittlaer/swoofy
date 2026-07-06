@@ -1,9 +1,11 @@
 # Shopware-on-Coolify Infrastructure (OpenTofu)
 
 The production **and** staging Shopware 6 stack on Coolify v4, provisioned as code with
-OpenTofu and the `coolify-terraform/coolify` provider. One module (`modules/shopware-stack`)
-is instantiated per environment. The stack is live; the provider/Coolify quirks worked around
-along the way are documented in `FINDINGS.md`.
+OpenTofu and the `coolify-terraform/coolify` provider. One external module
+([`vanWittlaer/terraform-coolify-shopware-stack`](https://github.com/vanWittlaer/terraform-coolify-shopware-stack),
+consumed by version via `source = "...?ref=vX.Y.Z"`) is instantiated per environment. The stack
+is live; the provider/Coolify quirks worked around along the way are documented in the module's
+[FINDINGS.md](https://github.com/vanWittlaer/terraform-coolify-shopware-stack/blob/main/FINDINGS.md).
 
 ## What gets created (per environment)
 
@@ -23,11 +25,11 @@ resource, so the shared env (`local.shared_env`) is fanned out per resource.
 
 ## Layout
 
-- `main.tf` — instantiates `modules/shopware-stack` twice (production + staging).
-- `modules/shopware-stack/` — the stack: `apps.tf` (web), `workers.tf` (workers service),
-  `databases.tf`, `services.tf` (rabbitmq/elasticsearch/mailpit), `backup.tf` (optional backup
-  service + scheduled tasks), `env.tf`, `storage.tf` (web `var/log` + staging `.htpasswd` bind
-  mounts), `locals.tf` (shared env, DSNs). `cors.tf` lives at root.
+- `main.tf` — instantiates the external
+  [`terraform-coolify-shopware-stack`](https://github.com/vanWittlaer/terraform-coolify-shopware-stack)
+  module twice (production + staging), pinned by `?ref=vX.Y.Z`. The module is the stack itself:
+  web + workers, databases, rabbitmq/elasticsearch/mailpit, optional backup service, shared env
+  and bind mounts. `cors.tf` lives here at root (a consumer concern, not the module's).
 - `production.tfvars` / `staging.tfvars` — per-env **non-secret** settings.
 - `secrets.auto.tfvars` — **git-ignored** secrets (see below).
 
@@ -95,7 +97,7 @@ provider aliasing is needed.
 
 ### Backup service
 
-Scheduled backups (`modules/shopware-stack/backup.tf`) are gated per-env by **`enable_backup`**
+Scheduled backups (the module's `backup.tf`) are gated per-env by **`enable_backup`**
 (like `enable_elasticsearch` — on for both prod and staging). The service is a single-container
 `docker_compose_raw` running the **env-agnostic ops/maintenance sidecar image** idle on
 `tail -f /dev/null`. That image is **not built here** — it lives in its own standalone repo
@@ -175,5 +177,6 @@ the git-ignored `secrets.auto.tfvars`** (e.g. in a password manager or offline v
 it means regenerating `app_secret` / `instance_id` and re-entering every credential. Consider
 also stashing a periodic copy of **`tofu.tfstate`** off-machine: losing it doesn't lose the
 infrastructure — the Coolify provider supports `tofu import`, so the stack can be re-adopted by
-ID — but a copy spares you the tedious per-resource re-import. See `FINDINGS.md` for the full
-provider/Coolify quirk log.
+ID — but a copy spares you the tedious per-resource re-import. See the module's
+[FINDINGS.md](https://github.com/vanWittlaer/terraform-coolify-shopware-stack/blob/main/FINDINGS.md)
+for the full provider/Coolify quirk log.
