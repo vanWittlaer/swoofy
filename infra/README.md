@@ -1,10 +1,20 @@
-# Shopware-on-Coolify Infrastructure (OpenTofu)
+# Shopware-on-Coolify Bootstrap (OpenTofu)
 
-The production **and** staging Shopware 6 stack on Coolify v4, provisioned as code with
-OpenTofu and the `coolify-terraform/coolify` provider. One external module
-([`vanWittlaer/terraform-coolify-shopware-stack`](https://github.com/vanWittlaer/terraform-coolify-shopware-stack),
-consumed by version via `source = "...?ref=vX.Y.Z"`) is instantiated per environment. The stack
-is live; the provider/Coolify quirks worked around along the way are documented in the module's
+One-shot provisioning of the production **and** staging Shopware 6 stack on Coolify v4,
+driven by a single command: **`ddev coolify-bootstrap up`**.
+
+**The contract:** `infra/` sets up your environment **once**. After bootstrap the
+**Coolify UI is the single source of truth** — maintain, tune and upgrade the running
+environment there. Never re-run the bootstrap against a live environment: the Coolify
+provider pushes env vars **write-only** (re-sent on every apply; changes made in the UI
+are invisible to it), so a re-apply silently overwrites whatever was changed in the UI
+since. The command enforces this with guardrails (see Step 2).
+
+Under the hood: OpenTofu + the external
+[`vanWittlaer/terraform-coolify-shopware-stack`](https://github.com/vanWittlaer/terraform-coolify-shopware-stack)
+module (pinned via `source = "...?ref=vX.Y.Z"` in `main.tf`, instantiated once per
+environment). The provider/Coolify quirks worked around along the way are documented in
+the module's
 [FINDINGS.md](https://github.com/vanWittlaer/terraform-coolify-shopware-stack/blob/main/FINDINGS.md).
 
 ## What gets created (per environment)
@@ -23,39 +33,25 @@ The private/public **filesystems are on S3** (`shopware/config/packages/shopware
 provider pointed at the S3 endpoint (`cors.tf`). The provider has no shared-variable
 resource, so the shared env (`local.shared_env`) is fanned out per resource.
 
-## Layout
-
-- `main.tf` — instantiates the external
-  [`terraform-coolify-shopware-stack`](https://github.com/vanWittlaer/terraform-coolify-shopware-stack)
-  module twice (production + staging), pinned by `?ref=vX.Y.Z`. The module is the stack itself:
-  web + workers, databases, rabbitmq/elasticsearch/mailpit, optional backup service, shared env
-  and bind mounts. `cors.tf` lives here at root (a consumer concern, not the module's).
-- `production.tfvars` / `staging.tfvars` — per-env **non-secret** settings.
-- `secrets.auto.tfvars` — **git-ignored** secrets (see below).
-
 ## Prerequisites
 
 - A running **Coolify v4** instance with the **API enabled** + a token, and a **server**
   registered in it (you need its UUID).
 - A **private registry** with the built `web` image. NB: `config/packages/*.yaml` (S3,
   trusted_proxies, monolog) is **baked into the image at build time** — a config change
-  needs an image rebuild, not just a tofu apply. The build stage must be PHP 8.4
+  needs an image rebuild, not a re-provision. The build stage must be PHP 8.4
   (`shopware/docker/Dockerfile`) to match the lock/runtime.
 - **S3 buckets** already created (public bucket must serve objects **public-read**).
-- **OpenTofu** — no local install needed; it's baked into the **ddev web container** via
-  `.ddev/web-build/Dockerfile.opentofu` (the official `install-opentofu.sh`, deb method). Run
-  `tofu` from inside ddev (`ddev ssh`, then `cd infra`). That container also provides the
-  `curl` the `connect_to_docker_network` local-execs shell out to.
+- **ddev running** (`ddev start`) — OpenTofu and curl are baked into the web container
+  (`.ddev/web-build/Dockerfile.opentofu`); you never invoke `tofu` yourself.
 
-## Setup
+See `PREREQUISITES.md` for the detailed walk-through.
 
-Run everything below **inside the ddev web container** (`ddev ssh`), where `tofu` lives:
+## Step 1 — fill in the config
 
 ```bash
 cd infra
 cp secrets.auto.tfvars.example secrets.auto.tfvars   # fill in real values
-tofu init
-tofu fmt -recursive && tofu validate
 ```
 
 ### `secrets.auto.tfvars` (git-ignored)
@@ -120,63 +116,88 @@ different location if you have one. Its credentials (`s3_backup_access_key_id` /
 `s3_backup_secret_access_key`) are **secrets** in the git-ignored `secrets.auto.tfvars`, not in
 `*.tfvars` (Hetzner keys are project-wide, so they can be the same pair as `s3_*`).
 
-## Apply
+## Step 2 — bootstrap
 
 ```bash
-# both environments
-tofu apply -var-file=production.tfvars -var-file=staging.tfvars
-
-# production only (staging.tfvars still needed to satisfy the required var)
-tofu apply -target=module.production -var-file=production.tfvars -var-file=staging.tfvars
+ddev coolify-bootstrap up
 ```
 
-### One-time manual steps (can't be expressed in the provider)
+The command (a ddev web command, `.ddev/commands/web/coolify-bootstrap`) runs: prereq checks
+(config files present, Coolify API reachable with your token) → `tofu init/validate/plan` →
+shows the plan → **one** confirmation → apply → prints the post-bootstrap checklist and the
+hand-off message.
 
-- **`chown` the log dir** on the Coolify host so the container user (UID 82) can write:
+Guardrails:
+
+- **No local state, but the Coolify project already exists** → it **refuses**: that
+  environment is live and UI-managed; bootstrapping again would create a duplicate stack.
+- **Local state present** (already bootstrapped from this machine) → it **warns** that a
+  re-apply overwrites UI-made env changes and asks for explicit confirmation. This is an
+  escape hatch for a botched first run — not a maintenance path.
+
+## Step 3 — post-bootstrap checklist (one-time manual steps)
+
+Printed by the command after a successful apply; also listed here. On each Coolify host:
+
+- **`chown` the log dir** so the container user (UID 82) can write:
   `mkdir -p /data/shopware/<env>/var/log && chown -R 82:82 /data/shopware/<env>/var/log`.
-- **DB tuning** (`mariadb_conf` / `redis_conf`) is disabled in `databases.tf` — Coolify 4.1.2
-  rejects the provider's extended-fields update; set `my.cnf` / `redis.conf` in the Coolify UI.
-- **Build the ES indices** in every environment where `enable_elasticsearch = true` (now prod
-  **and** staging): after the deploy that wires Elasticsearch, run `bin/console es:index`
-  (storefront) and `bin/console es:admin:index` (admin search), and redeploy the workers so
-  they pick up the ES env. Until built, search falls back to the DB
-  (`SHOPWARE_ES_THROW_EXCEPTION=0`), so nothing 500s in the meantime.
 - **Staging basic-auth `.htpasswd`** — the staging `final-protected` image serves the storefront
   behind HTTP basic-auth, reading `/var/www/auth/.htpasswd` from a host bind mount
   (`basic_auth_host_path`, wired in `main.tf` to `<log_host_base>/staging/auth`). Create it on
   the host so the hash never enters the repo/image:
   `mkdir -p /data/shopware/staging/auth && htpasswd -nbB <user> '<pw>' > /data/shopware/staging/auth/.htpasswd && chown -R 82:82 /data/shopware/staging/auth`.
+- **DB tuning** (`mariadb_conf` / `redis_conf`) is disabled in the module — Coolify 4.1.2
+  rejects the provider's extended-fields update; set `my.cnf` / `redis.conf` in the Coolify UI.
+- **Build the ES indices** in every environment where `enable_elasticsearch = true`: after the
+  deploy that wires Elasticsearch, run `bin/console es:index` (storefront) and
+  `bin/console es:admin:index` (admin search), and redeploy the workers so they pick up the ES
+  env. Until built, search falls back to the DB (`SHOPWARE_ES_THROW_EXCEPTION=0`), so nothing
+  500s in the meantime.
 
 `connect_to_docker_network` (rabbitmq + workers + elasticsearch + backup reaching the shared
 network) is handled automatically by `null_resource`s (the provider can't round-trip the flag).
 
-### Env changes need a redeploy
+## Step 4 — hand off to the Coolify UI
 
-`tofu apply` only writes env vars into Coolify's config — Coolify injects them at
-**(re)deploy** time. After changing an env value, redeploy the affected `web` app / `workers`
-service (Coolify UI **Redeploy**, or `POST /api/v1/deploy?uuid=…&force=true`). The
-`coolify_envs_bulk` vars are write-only to the provider, so tofu re-pushes them every apply
-and can't detect drift — always pair an env change with a manual redeploy.
+From here on the **Coolify UI owns the environment**:
 
-## Teardown
+- **Archive** `secrets.auto.tfvars` and `tofu.tfstate` off-machine (password manager / vault)
+  and delete them locally — see `STATE.md`. They are recovery records, not living artifacts.
+- **Env changes** happen in the Coolify UI and take effect at the next redeploy (Coolify
+  injects env at deploy time).
+- **Stack upgrades** (module changes, new services): new setups simply bootstrap the latest
+  version; changes to a *running* shop are applied manually via the Coolify UI, following the
+  module's release notes.
+
+## Teardown (trial runs)
 
 ```bash
-tofu destroy -var-file=production.tfvars -var-file=staging.tfvars
+ddev coolify-bootstrap destroy
 ```
 
-Coolify may leave orphaned containers behind (they keep Traefik labels and can keep serving a
-domain); remove them on the host with `docker rm -f` — see FINDINGS.
+Only possible while the local state from `up` still exists. Coolify may leave orphaned
+containers behind (they keep Traefik labels and can keep serving a domain); remove them on the
+host with `docker rm -f` — see the module's FINDINGS.md.
 
-## State
+## Appendix — under the hood
 
-State is a **local file** (`tofu.tfstate`, `backend "local"` in `versions.tf`) — fine for a
-single operator; move to a remote, locked, encrypted backend before more people manage it.
+For working on this stack itself (not for maintaining a bootstrapped environment). Run inside
+the web container (`ddev ssh`, then `cd infra`):
 
-Because the state and the owned secrets live only on one machine, **keep a safe backup copy of
-the git-ignored `secrets.auto.tfvars`** (e.g. in a password manager or offline vault). Losing
-it means regenerating `app_secret` / `instance_id` and re-entering every credential. Consider
-also stashing a periodic copy of **`tofu.tfstate`** off-machine: losing it doesn't lose the
-infrastructure — the Coolify provider supports `tofu import`, so the stack can be re-adopted by
-ID — but a copy spares you the tedious per-resource re-import. See the module's
-[FINDINGS.md](https://github.com/vanWittlaer/terraform-coolify-shopware-stack/blob/main/FINDINGS.md)
-for the full provider/Coolify quirk log.
+```bash
+tofu init
+tofu fmt -recursive && tofu validate
+tofu plan    -var-file=production.tfvars -var-file=staging.tfvars
+tofu apply   -var-file=production.tfvars -var-file=staging.tfvars   # what "up" runs
+tofu destroy -var-file=production.tfvars -var-file=staging.tfvars   # what "destroy" runs
+```
+
+- Env vars written by tofu land in Coolify's config; Coolify injects them at **(re)deploy**
+  time — pair any env change with a redeploy of the affected `web` app / `workers` service
+  (Coolify UI **Redeploy**, or `POST /api/v1/deploy?uuid=…&force=true`). The
+  `coolify_envs_bulk` vars are **write-only** to the provider (re-pushed every apply, no drift
+  detection) — this is exactly why re-applying against a UI-managed environment is forbidden.
+- The Coolify provider has **no `entrypoint` argument** for image apps — workers use
+  `start_command`; see the module's FINDINGS.md ("Risk W") if a worker boots the web server
+  instead of `messenger:consume`.
+- State: a local file, `tofu.tfstate` — see `STATE.md` for the archive/recovery model.
