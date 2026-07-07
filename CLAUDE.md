@@ -8,7 +8,7 @@ A **reference/demo project for self-hosting Shopware 6 on Coolify** (a self-host
 
 - **ddev** — local development environment (`.ddev/`)
 - **shopware/docker** — production container image + worker/scheduler topology (`shopware/docker/`)
-- **OpenTofu** — Infrastructure-as-Code that provisions the Coolify stack (`infra/`)
+- **OpenTofu** — one-shot bootstrap that provisions the Coolify stack (`infra/`, driven by `ddev coolify-bootstrap`; afterwards the Coolify UI is the source of truth)
 - **CI/CD** — build image → trigger Coolify deploy, in both GitHub Actions (`.github/`) and GitLab (`.gitlab-ci.yml`)
 
 ## Critical layout fact: the app lives in `shopware/`
@@ -22,7 +22,7 @@ The git root is the repository root, but the Shopware application is the **`shop
 
 When running PHP/Composer/console commands directly (not via ddev), `cd shopware` first.
 
-Top-level map: `shopware/` (the app) · `.ddev/` (local dev) · `infra/` (OpenTofu, untracked WIP) · `.github/` + `.gitlab-ci.yml` (CI/CD) · `README.md` (the authoritative Coolify setup runbook).
+Top-level map: `shopware/` (the app) · `.ddev/` (local dev) · `infra/` (OpenTofu one-shot bootstrap) · `.github/` + `.gitlab-ci.yml` (CI/CD) · `README.md` (the authoritative Coolify setup runbook).
 
 ## Local development (ddev)
 
@@ -64,7 +64,7 @@ The production image is built from `shopware/docker/Dockerfile` (multi-stage, us
 
 Runtime topology (decomposed model, separate Coolify resources):
 - **web** — the image above
-- **worker/scheduler** — managed by the OpenTofu stack (`infra/modules/shopware-stack/workers.tf`): a `coolify_service` (docker compose) running two `messenger:consume async low_priority` workers + one `scheduled-task:run` scheduler, reusing the web image, with `var/log` bind-mounted from the host
+- **worker/scheduler** — provisioned by the OpenTofu bootstrap (the [`terraform-coolify-shopware-stack`](https://github.com/vanWittlaer/terraform-coolify-shopware-stack) module's `workers.tf`): a `coolify_service` (docker compose) running two `messenger:consume async low_priority` workers + one `scheduled-task:run` scheduler, reusing the web image, with `var/log` bind-mounted from the host
 - **shell** (optional) — the ops/maintenance sidecar (bash + `shopware-cli` + rclone for backups/maintenance; the Shopware base image intentionally has no bash) lives in its **own standalone repo**, `vanwittlaer/shopware-ops-shell`, and is consumed here as a published image (`ghcr.io/vanwittlaer/shopware-ops-shell`), wired by the OpenTofu backup stack. It is **not** built from this repo.
 
 Local `compose.yaml`/`compose.override.yaml` are the Shopware-recipe dev services (MariaDB, OpenSearch, Mailpit) — **not** the production topology.
@@ -86,21 +86,18 @@ Both pipelines do the same two stages — **build image → POST to a Coolify de
 
 ## Infrastructure as Code (`infra/`)
 
-OpenTofu (`tofu`, ≥ 1.7) provisioning the **live production + staging** Coolify stack via the `coolify-terraform/coolify` provider (see `infra/README.md` and `infra/FINDINGS.md`). Not yet fully hardened — state is a local backend and a few steps stay manual (log-dir chown, DB/Redis UI tuning, ES index build, staging `.htpasswd`) — but it's the deployed infrastructure, no longer a throwaway spike.
+OpenTofu (`tofu`, ≥ 1.7) provisioning the **live production + staging** Coolify stack via the `coolify-terraform/coolify` provider (see `infra/README.md`). **Strictly one-shot:** `ddev coolify-bootstrap up` provisions everything once; afterwards the **Coolify UI is the single source of truth** — never re-apply against a live environment (the provider pushes env vars write-only, so a re-apply overwrites UI changes; the command's guardrails enforce this). A few steps stay manual post-bootstrap (log-dir chown, DB/Redis UI tuning, ES index build, staging `.htpasswd`) — the command prints the checklist.
 
 ```bash
-cd infra
-cp secrets.auto.tfvars.example secrets.auto.tfvars   # fill in real values
-tofu init
-tofu fmt -recursive && tofu validate
-tofu plan
-tofu apply -var-file=production.tfvars -var-file=staging.tfvars
-tofu destroy -var-file=production.tfvars -var-file=staging.tfvars
+cp infra/secrets.auto.tfvars.example infra/secrets.auto.tfvars   # fill in real values
+ddev coolify-bootstrap up        # one-shot provision (guarded, single confirmation)
+ddev coolify-bootstrap destroy   # teardown of a trial run (needs local state)
+# raw tofu (stack development only): see the appendix in infra/README.md
 ```
 
-- `main.tf` instantiates `modules/shopware-stack` twice (production + staging) — one Coolify project, two environments.
+- `main.tf` instantiates the external [`terraform-coolify-shopware-stack`](https://github.com/vanWittlaer/terraform-coolify-shopware-stack) module twice (production + staging, pinned `?ref=vX.Y.Z`) — one Coolify project, two environments.
 - The module builds: `web` + N `worker` + `scheduler` (all one image), `mariadb`, 2× `redis` (cache/session — Symfony lock uses the shared DB via `LOCK_DSN`, no dedicated lock Redis), `rabbitmq` and `elasticsearch` (own `docker_compose_raw`), `mailpit` (staging only).
-- **State is a local file** (`tofu.tfstate`, `backend "local"` in `versions.tf`) — single-machine; swap for a remote locked backend for real prod. Keep backup copies of the gitignored `secrets.auto.tfvars` (the only place the owned secrets live) and `tofu.tfstate` (or rely on `tofu import` — provider v0.1.7 supports it — to re-adopt resources if state is lost).
+- **State is a local file** (`tofu.tfstate`, `backend "local"` in `versions.tf`) — after bootstrap it's a **recovery record**: archive it plus the gitignored `secrets.auto.tfvars` off-machine and delete locally (`infra/STATE.md`). Lost state can be rebuilt via `tofu import` (provider v0.1.7 supports it).
 - Most credentials are Coolify-generated; the only secrets you own are Shopware's `app_secret` and `instance_id` (kept stable across deploys), in the gitignored `secrets.auto.tfvars`.
 - The Coolify provider has **no `entrypoint` argument** for image apps — workers use `start_command`; see the "Risk W" discovery notes in `apps.tf`/`README.md` if a worker boots the web server instead of `messenger:consume`.
 

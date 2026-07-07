@@ -73,7 +73,7 @@ stack deploys it by reference, it is not built on the server.
 The stack is decomposed into separate Coolify resources, all managed by OpenTofu:
 
 - **web** — the image above, nginx on port 8000.
-- **worker/scheduler** — `infra/modules/shopware-stack/workers.tf`: a Coolify docker-compose
+- **worker/scheduler** — the [stack module](https://github.com/vanWittlaer/terraform-coolify-shopware-stack)'s `workers.tf`: a Coolify docker-compose
   service running two `messenger:consume` workers + one `scheduled-task:run` scheduler,
   reusing the web image. Workers drain gracefully on redeploy (SIGTERM + a grace period).
 - **shell / backups** (optional) — an env-agnostic ops/maintenance sidecar image from the
@@ -81,8 +81,10 @@ The stack is decomposed into separate Coolify resources, all managed by OpenTofu
   (Wolfi + bash + `shopware-cli` + rclone), **not built here**. See [Backups](#backups-optional).
 
 # Provisioning the Coolify stack (OpenTofu)
-The production and staging stacks are **Infrastructure-as-Code** in [`infra/`](infra/). One
-module (`infra/modules/shopware-stack`) is instantiated once per environment and creates the
+The production and staging stacks are provisioned **once** from [`infra/`](infra/) — a
+**one-shot bootstrap**; afterwards the **Coolify UI is the single source of truth**. One
+module ([`terraform-coolify-shopware-stack`](https://github.com/vanWittlaer/terraform-coolify-shopware-stack))
+is instantiated once per environment and creates the
 **web** app, the **worker/scheduler** service, **MariaDB**, **cache + session Redis**,
 **RabbitMQ**, **Elasticsearch**, **Mailpit** (staging), the **S3** media wiring + CORS, and
 the optional **backup** stack.
@@ -98,14 +100,17 @@ All application env — `DATABASE_URL`, `REDIS_*`, `MESSENGER_*` (RabbitMQ), `AP
   bucket if backups are enabled.
 - **OpenTofu ≥ 1.7** — baked into the ddev web container, so run `tofu` from `ddev ssh`.
 
-## Apply
+## Bootstrap
 ```bash
 cd infra
 cp secrets.auto.tfvars.example secrets.auto.tfvars   # fill in the few secrets you own
-tofu init
-tofu fmt -recursive && tofu validate
-tofu apply -var-file=production.tfvars -var-file=staging.tfvars
+cd .. && ddev coolify-bootstrap up
 ```
+
+`ddev coolify-bootstrap` wraps OpenTofu (baked into the ddev web container): prereq checks →
+plan → **one** confirmation → apply → post-setup checklist. It refuses to bootstrap an
+environment that already exists in Coolify — the setup is **strictly one-time**; maintain the
+live environment in the Coolify UI. Teardown of a trial run: `ddev coolify-bootstrap destroy`.
 
 The only secrets you provide (in the git-ignored `secrets.auto.tfvars`) are `server_uuid`,
 `app_secret`, `instance_id`, `rabbitmq_password`, the S3 access keys, `mailer_dsn`, and — for
@@ -113,9 +118,11 @@ staging — `mailpit_ui_auth` (and the backup-bucket keys when backups are on). 
 generates the DB/Redis passwords.** Per-environment **non-secret** settings (domains, image
 tags, feature toggles, DB/Redis tuning) live in `production.tfvars` / `staging.tfvars`.
 
-State is a **local backend** (`infra/tofu.tfstate`) — fine for a single operator; swap for a
-remote, locked backend for a team. See [`infra/README.md`](infra/README.md) for the full
-runbook and [`infra/FINDINGS.md`](infra/FINDINGS.md) for the provider/Coolify quirks.
+After bootstrap, **archive** `infra/secrets.auto.tfvars` and `infra/tofu.tfstate` off-machine
+(password manager / vault) — they are recovery records, not living artifacts
+(`infra/STATE.md`). See [`infra/README.md`](infra/README.md) for the full runbook and the
+module's [FINDINGS.md](https://github.com/vanWittlaer/terraform-coolify-shopware-stack/blob/main/FINDINGS.md)
+for the provider/Coolify quirks.
 
 ## One-time manual steps OpenTofu can't express
 - **`chown` the log dir** on the host so the container user (UID 82) can write:
@@ -145,7 +152,7 @@ runbook and [`infra/FINDINGS.md`](infra/FINDINGS.md) for the provider/Coolify qu
 - **DNS** — point the storefront (and the staging Mailpit) domains at the server.
 
 ## Backups (optional)
-Scheduled backups (`infra/modules/shopware-stack/backup.tf`) are toggled per-env via
+Scheduled backups (the [stack module](https://github.com/vanWittlaer/terraform-coolify-shopware-stack)'s `backup.tf`) are toggled per-env via
 `enable_backup`. The service runs the [`shopware-ops-shell`](https://github.com/vanwittlaer/shopware-ops-shell)
 image idle; Coolify **Scheduled Tasks** `exec` `bin/backup-db.sh` (DB dump via
 `shopware-cli project dump`) and `bin/backup-s3.sh` (offsite S3 mirror) into it on cron.
