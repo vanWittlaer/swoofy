@@ -142,6 +142,13 @@ for the provider/Coolify quirks.
 - **Build the Elasticsearch indices** in every env with `enable_elasticsearch = true`:
   `bin/console es:index` (storefront) + `bin/console es:admin:index` (admin), then redeploy
   the workers. Until built, search falls back to the DB, so nothing 500s.
+- **First-deploy styling quirk** — if the storefront loads unstyled right after the very
+  *first* deploy (403 on `theme/<hash>/css/all.css`): a page was HTTP-cached mid-install
+  (health checks hit `/` while the deployment-helper still runs) referencing a theme path
+  that never got files; later deploys keep old theme dirs for 24 h, so only the first
+  install can 403 like this. It self-heals once the cache-invalidation scheduled task runs
+  (workers up, ≤ 5 min) — or run `bin/console theme:compile --active-only` in the web
+  container.
 - **Staging basic-auth** — create the `.htpasswd` on the host (bind-mounted into the web app
   at `/var/www/auth`), so the hash never enters the repo or image:
   ```bash

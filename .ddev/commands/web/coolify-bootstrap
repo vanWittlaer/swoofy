@@ -167,6 +167,13 @@ Coolify HOST as root:
       bin/console es:index && bin/console es:admin:index
     then redeploy the workers so they pick up the ES env.
 
+ 5. First-deploy quirk: if the storefront loads unstyled right after the very
+    FIRST deploy (403 on theme/<hash>/css/all.css), a page was cached
+    mid-install pointing at a theme path that never got files. It self-heals
+    once the cache-invalidation scheduled task runs (workers up, <= 5 min) —
+    or fix immediately in the web container:
+      bin/console theme:compile --active-only
+
 --------------------------------------------------------------------------------
 From now on the COOLIFY UI is the single source of truth for this environment.
 Do NOT run this bootstrap again against it — a re-apply overwrites UI changes.

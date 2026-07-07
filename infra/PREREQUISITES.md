@@ -110,6 +110,17 @@ The provider can't express these; do them once per env after the resources exist
        then **redeploy the workers** so they pick up the ES env. Until built, search falls back
        to the DB (`SHOPWARE_ES_THROW_EXCEPTION=0`) — nothing 500s in the meantime.
 
+5. [ ] **First-deploy styling quirk** — if the storefront loads unstyled right after the very
+       **first** deploy (403 on `theme/<hash>/css/all.css`): a storefront page was HTTP-cached
+       mid-install (health checks hit `/` while the deployment-helper still runs) referencing a
+       theme path that never got files. On later deploys old theme dirs are kept for 24 h, so
+       only the first install can 403 like this. It self-heals once the cache-invalidation
+       scheduled task runs (workers/scheduler up, ≤ 5 min) — or fix immediately in the web
+       container:
+       ```bash
+       bin/console theme:compile --active-only
+       ```
+
 > Not manual: `connect_to_docker_network` (rabbitmq / workers / elasticsearch / backup joining
 > the shared network) is automated by `null_resource`s, since the provider can't round-trip the
 > flag. No action needed.
