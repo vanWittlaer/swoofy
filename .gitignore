@@ -17,6 +17,10 @@
 # part of this repo.
 /terraform-coolify-shopware-stack/
 
+# The ddev add-on delivering the one-shot Coolify bootstrap tooling lives in its own repo
+# (vanWittlaer/ddev-coolify-bootstrap); checked out here as a sibling but NOT part of this repo.
+/ddev-coolify-bootstrap/
+
 # Secrets / sensitive artifacts — never commit (defense-in-depth). A saved tofu plan
 # embeds the full state incl. plaintext secrets; the rest are key/credential files.
 *.tfplan
