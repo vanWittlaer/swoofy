@@ -57,13 +57,23 @@ tfvar() {
     }' "$@"
 }
 
-COOLIFY_ENDPOINT="$(tfvar coolify_endpoint secrets.auto.tfvars)"
-COOLIFY_TOKEN="$(tfvar coolify_token secrets.auto.tfvars)"
+# File wins over environment (mirrors tofu: *.auto.tfvars beats TF_VAR_*); the env
+# fallback honors the documented COOLIFY_ENDPOINT / COOLIFY_TOKEN alternative.
+file_endpoint="$(tfvar coolify_endpoint secrets.auto.tfvars)"
+file_token="$(tfvar coolify_token secrets.auto.tfvars)"
+COOLIFY_ENDPOINT="${file_endpoint:-${COOLIFY_ENDPOINT:-}}"
+COOLIFY_TOKEN="${file_token:-${COOLIFY_TOKEN:-}}"
 PROJECT_NAME="$(tfvar project_name production.tfvars staging.tfvars)"
 
-[ -n "$COOLIFY_ENDPOINT" ] || die "coolify_endpoint not set in secrets.auto.tfvars"
-[ -n "$COOLIFY_TOKEN" ]    || die "coolify_token not set in secrets.auto.tfvars"
+[ -n "$COOLIFY_ENDPOINT" ] || die "coolify_endpoint not set in secrets.auto.tfvars (or COOLIFY_ENDPOINT in the environment)"
+[ -n "$COOLIFY_TOKEN" ]    || die "coolify_token not set in secrets.auto.tfvars (or COOLIFY_TOKEN in the environment)"
 [ -n "$PROJECT_NAME" ]     || die "project_name not set in production.tfvars"
+
+# Hand the resolved values to tofu too — the root variables are required, and
+# TF_VAR_* sits below *.auto.tfvars in tofu's precedence, so this is a no-op when
+# the file provides them and exactly the fallback when only the env does.
+export TF_VAR_coolify_endpoint="$COOLIFY_ENDPOINT"
+export TF_VAR_coolify_token="$COOLIFY_TOKEN"
 
 # Fail fast: is the Coolify API reachable with this token?
 PROJECTS_JSON="$(curl -fsS --max-time 15 \

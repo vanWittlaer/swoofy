@@ -1,7 +1,8 @@
 # Prerequisites & one-time manual steps
 
-Everything that must be true **around** `tofu apply` that the Coolify provider can't do for
-you. Work top to bottom: [A] before the first apply, [B] one-time manual steps after it (per
+Everything that must be true **around** `ddev coolify-bootstrap up` (the one-shot entry point;
+`tofu apply` runs underneath it — see `README.md`) that the Coolify provider can't do for you.
+Work top to bottom: [A] before the first run, [B] one-time manual steps after it (per
 environment), [C] the recurring rule that applies to every later change.
 
 Placeholders: `<env>` = `production` | `staging`; `<log_host_base>` = your `log_host_base`
@@ -9,7 +10,7 @@ tfvar (e.g. `/data/shopware`); container user is **UID 82** (the Shopware base i
 
 ---
 
-## [A] Before the first apply
+## [A] Before the first run
 
 ### Control plane & tooling
 - [ ] **Coolify v4** instance running, **API enabled**, with an **API token** (Security → API
@@ -17,7 +18,9 @@ tfvar (e.g. `/data/shopware`); container user is **UID 82** (the Shopware base i
       SSH key and secret Coolify holds, so avoid `root` unless a narrower scope fails.
 - [ ] A **server registered** in Coolify for each environment; note its **`server_uuid`**.
       Same UUID for both envs = co-located; different = prod/staging on separate hosts.
-- [ ] **OpenTofu ≥ 1.7** available to run `tofu` against this configuration.
+- [ ] **ddev running** (`ddev start`) — OpenTofu ≥ 1.7 is baked into the web container
+      (`.ddev/web-build/Dockerfile.opentofu`); `ddev coolify-bootstrap up` runs it for you, you
+      never invoke `tofu` yourself.
 
 ### Host sizing
 - [ ] Enough **RAM + swap** on each server. The full stack (web + workers + MariaDB + 2×Redis +
@@ -73,7 +76,7 @@ tfvar (e.g. `/data/shopware`); container user is **UID 82** (the Shopware base i
 
 ---
 
-## [B] One-time manual steps after apply (per environment)
+## [B] One-time manual steps after the first run (per environment)
 
 The provider can't express these; do them once per env after the resources exist.
 
