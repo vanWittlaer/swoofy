@@ -2,14 +2,10 @@ terraform {
   required_version = ">= 1.7.0"
 
   # State lives in a LOCAL file (tofu.tfstate, not the default terraform.tfstate) — the
-  # deliberate default for a single-operator stack. See STATE.md for the full picture; it
-  # covers TWO orthogonal axes an adopter should decide separately:
-  #   1. protection  — OpenTofu >=1.7 native `encryption {}` (client-side, backend-agnostic;
-  #                    this is what answers "state stores every secret in plaintext")
-  #   2. location    — the backend below (local / GitLab / S3-compatible)
-  # To go remote, replace this block with ONE of the commented alternatives in STATE.md and
-  # run `tofu init -migrate-state`. Keep an off-machine backup of tofu.tfstate + the
-  # git-ignored secrets.auto.tfvars while on the local backend — they are the only copy.
+  # deliberate choice for the one-shot bootstrap model: the stack is provisioned once from
+  # one machine, then the Coolify UI owns the environment. After bootstrap, archive
+  # tofu.tfstate + the git-ignored secrets.auto.tfvars off-machine and delete them locally —
+  # they are recovery records, not living artifacts. See STATE.md.
   backend "local" {
     path = "tofu.tfstate"
   }
