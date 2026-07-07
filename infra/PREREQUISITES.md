@@ -70,9 +70,9 @@ tfvar (e.g. `/data/shopware`); container user is **UID 82** (the Shopware base i
   - `s3_backup_access_key_id` / `s3_backup_secret_access_key` — when `enable_backup = true`
 - [ ] `*.tfvars` — set `project_name` (project-wide) and the per-env `production` / `staging`
       objects (`web_image*`, `web_domain`, `s3`, `app_env`, toggles, `backup`, …).
-- [ ] **Back up `secrets.auto.tfvars` and `tofu.tfstate`** off-machine — with the default local
-      backend they are the only copy. For a single operator that's all you need; if you'll share
-      state across people/machines, see `STATE.md` for the remote (S3) + optional encryption path.
+- [ ] **Back up `secrets.auto.tfvars` and `tofu.tfstate`** off-machine — they are the only copy.
+      After bootstrap, archive both and delete them locally — they are recovery records, not
+      living artifacts (see `STATE.md`).
 
 ---
 
