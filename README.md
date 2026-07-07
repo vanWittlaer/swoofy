@@ -128,7 +128,7 @@ for the provider/Coolify quirks.
 - **`chown` the log dir** on the host so the container user (UID 82) can write:
   `mkdir -p /data/shopware/<env>/var/log && chown -R 82:82 /data/shopware/<env>/var/log`.
 - **DB / Redis tuning** — set `my.cnf` / `redis.conf` in the Coolify UI; the current Coolify
-  version rejects the provider's extended-fields update (see FINDINGS). The intended values
+  version rejects the provider's extended-fields update (see the module's [FINDINGS.md](https://github.com/vanWittlaer/terraform-coolify-shopware-stack/blob/main/FINDINGS.md)). The intended values
   live in the `mariadb_conf` / `redis_conf` tfvars, e.g. for MariaDB:
   ```
   [mysqld]
@@ -160,7 +160,7 @@ Point `backup_image` / `backup_image_tag` at the published image and set the bac
 coordinates/credentials; see `infra/README.md` for schedules and bucket configuration.
 
 # First deploy: seeding data
-`tofu apply` provisions an **empty** stack — a fresh MariaDB and empty S3 buckets (the buckets
+`ddev coolify-bootstrap up` provisions an **empty** stack — a fresh MariaDB and empty S3 buckets (the buckets
 themselves are a prerequisite; OpenTofu only manages their CORS). Two ways to get to a working shop:
 
 ## a) Fresh install (from scratch)
