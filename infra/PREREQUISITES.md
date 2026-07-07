@@ -14,8 +14,9 @@ tfvar (e.g. `/data/shopware`); container user is **UID 82** (the Shopware base i
 
 ### Control plane & tooling
 - [ ] **Coolify v4** instance running, **API enabled**, with an **API token** (Security → API
-      Tokens). Scope it as narrowly as the apply flow allows — a `root` token can read every
-      SSH key and secret Coolify holds, so avoid `root` unless a narrower scope fails.
+      Tokens) carrying the **read + write + deploy** abilities. `read:sensitive` is NOT needed
+      (the module owns all DB credentials and never reads secrets back), and a `root` token can
+      read every SSH key and secret Coolify holds — avoid it.
 - [ ] A **server registered** in Coolify for each environment; note its **`server_uuid`**.
       Same UUID for both envs = co-located; different = prod/staging on separate hosts.
 - [ ] **ddev running** (`ddev start`) — OpenTofu ≥ 1.7 is baked into the web container

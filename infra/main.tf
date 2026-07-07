@@ -11,7 +11,7 @@ resource "coolify_environment" "staging" {
 }
 
 module "production" {
-  source           = "github.com/vanWittlaer/terraform-coolify-shopware-stack?ref=v0.3.0"
+  source           = "github.com/vanWittlaer/terraform-coolify-shopware-stack?ref=v0.5.0"
   environment_name = "production"
   project_uuid     = coolify_project.shopware.uuid
   server_uuid      = var.secrets_production.server_uuid
@@ -42,12 +42,11 @@ module "production" {
   rabbitmq_mgmt_port  = 25672
   s3                  = var.production.s3
   mailer_dsn          = var.secrets_production.mailer_dsn # production: real SMTP (secret)
-  redis_url_seed      = var.secrets_production.redis_url_seed
   secrets             = var.secrets_production
 }
 
 module "staging" {
-  source           = "github.com/vanWittlaer/terraform-coolify-shopware-stack?ref=v0.3.0"
+  source           = "github.com/vanWittlaer/terraform-coolify-shopware-stack?ref=v0.5.0"
   environment_name = "staging"
   project_uuid     = coolify_project.shopware.uuid
   server_uuid      = var.secrets_staging.server_uuid
@@ -79,7 +78,6 @@ module "staging" {
   mariadb_public_port = 5306
   rabbitmq_mgmt_port  = 35672
   s3                  = var.staging.s3
-  redis_url_seed      = var.secrets_staging.redis_url_seed
   secrets             = var.secrets_staging
 
   depends_on = [coolify_environment.staging]

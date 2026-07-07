@@ -24,8 +24,8 @@ Store both files in a password manager / offline vault, then remove them from th
   immediately. Without it, the resources still exist in Coolify and can be re-adopted one by
   one with `tofu import` (the provider supports it; see the module's
   [FINDINGS.md](https://github.com/vanWittlaer/terraform-coolify-shopware-stack/blob/main/FINDINGS.md)).
-  MariaDB DSNs self-heal from the DB's attributes; **reseed the two Redis URLs** via
-  `redis_url_seed` (paste from the Coolify UI), since `internal_db_url` reads null on import.
+  All DSNs self-heal from module-owned credentials; the `random_password` resources import
+  with the password value itself as the ID (read it from the Coolify UI).
 
 ## What this model deliberately does NOT need
 
