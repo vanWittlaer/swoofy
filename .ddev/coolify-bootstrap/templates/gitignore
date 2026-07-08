@@ -1,0 +1,6 @@
+# Secrets + state never enter git (see STATE.md in the module repo for the archive model).
+secrets.auto.tfvars
+tofu.tfstate
+tofu.tfstate.*
+.terraform/
+*.tfplan

@@ -24,6 +24,7 @@
 # Secrets / sensitive artifacts — never commit (defense-in-depth). A saved tofu plan
 # embeds the full state incl. plaintext secrets; the rest are key/credential files.
 *.tfplan
+secrets.auto.tfvars.backup
 .env.local
 .env.*.local
 *.pem

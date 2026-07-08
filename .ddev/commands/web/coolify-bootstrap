@@ -1,0 +1,223 @@
+#!/bin/bash
+#ddev-generated
+
+## Description: One-shot bootstrap of the Shopware stack on Coolify (OpenTofu under the hood)
+## Usage: coolify-bootstrap [init|up|destroy]
+## Example: ddev coolify-bootstrap init
+
+# Provisions the full production + staging Shopware stack on Coolify ONCE ("up"),
+# or tears a trial run down again ("destroy"). OpenTofu is an implementation
+# detail here — after bootstrap the COOLIFY UI is the single source of truth,
+# and this command must not be re-run against a live environment: the Coolify
+# provider pushes env vars write-only, so a re-apply silently overwrites
+# changes made in the UI. Guardrails below enforce that.
+#
+# Deliberately add-on-shaped: self-contained, the only path assumption is
+# INFRA_DIR (overridable), so it can later be extracted into a ddev add-on.
+
+set -euo pipefail
+
+INFRA_DIR="${INFRA_DIR:-/var/www/html/infra}"
+VAR_FILES=(-var-file=production.tfvars -var-file=staging.tfvars)
+
+# Scaffolding: the tcss module release the shipped templates are pinned to (the ONLY
+# place this version lives — init substitutes it into the scaffolded main.tf), and
+# where the add-on's templates land inside the web container.
+TCSS_VERSION="v0.5.0"
+TEMPLATES_DIR="${TEMPLATES_DIR:-/mnt/ddev_config/coolify-bootstrap/templates}"
+
+die() { echo "ERROR: $*" >&2; exit 1; }
+
+usage() {
+  cat <<'EOF'
+Usage: ddev coolify-bootstrap [init|up|destroy]
+
+  init     scaffold infra/ from the bundled templates (fresh projects only;
+           refuses if infra/ already exists).
+  up       provision the full stack on Coolify (default). Strictly one-shot:
+           refuses to run against an environment that already exists.
+  destroy  tear the stack down again (requires the local state written by "up").
+EOF
+}
+
+ACTION="${1:-up}"
+case "$ACTION" in
+  init|up|destroy) ;;
+  -h|--help|help) usage; exit 0 ;;
+  *) usage >&2; exit 1 ;;
+esac
+
+# ---- init (scaffold infra/ from the add-on's bundled templates) ------------
+
+if [ "$ACTION" = "init" ]; then
+  [ ! -e "$INFRA_DIR" ] || die "infra directory already exists: $INFRA_DIR — init only scaffolds fresh projects.
+To bootstrap an existing config, run: ddev coolify-bootstrap up"
+  [ -d "$TEMPLATES_DIR" ] || die "templates not found: $TEMPLATES_DIR (re-install the ddev-coolify-bootstrap add-on?)"
+
+  mkdir -p "$INFRA_DIR"
+  cp -R "$TEMPLATES_DIR/." "$INFRA_DIR/"
+  mv "$INFRA_DIR/gitignore" "$INFRA_DIR/.gitignore"
+  sed -i "s|__TCSS_VERSION__|${TCSS_VERSION}|g" "$INFRA_DIR/main.tf"
+
+  cat <<EOF
+Scaffolded ${INFRA_DIR} (terraform-coolify-shopware-stack ${TCSS_VERSION}).
+
+Next steps:
+ 1. cd infra && cp secrets.auto.tfvars.example secrets.auto.tfvars
+    — fill in the secrets you own (server UUIDs, app_secret, S3 keys, ...)
+ 2. Fill in production.tfvars / staging.tfvars (domains, images, buckets).
+ 3. ddev coolify-bootstrap up
+
+One-shot contract: once "up" succeeds, the Coolify UI is the single source of
+truth — never re-run the bootstrap against the live environment.
+EOF
+  exit 0
+fi
+
+cd "$INFRA_DIR" 2>/dev/null || die "infra directory not found: $INFRA_DIR"
+
+command -v tofu >/dev/null 2>&1 \
+  || die "tofu not found in the web container (is .ddev/web-build/Dockerfile.opentofu in place? Rebuild with 'ddev restart')"
+
+[ -f secrets.auto.tfvars ] \
+  || die "secrets.auto.tfvars is missing — cp secrets.auto.tfvars.example secrets.auto.tfvars and fill in real values"
+[ -f production.tfvars ] || die "production.tfvars is missing"
+[ -f staging.tfvars ] || die "staging.tfvars is missing"
+
+# Read a top-level `key = "value"` assignment from the given tfvars files (first hit wins).
+tfvar() {
+  local key="$1"; shift
+  awk -v k="$key" '
+    match($0, "^[[:space:]]*" k "[[:space:]]*=[[:space:]]*\"") {
+      s = $0; sub(/^[^"]*"/, "", s); sub(/".*$/, "", s); print s; exit
+    }' "$@"
+}
+
+# File wins over environment (mirrors tofu: *.auto.tfvars beats TF_VAR_*); the env
+# fallback honors the documented COOLIFY_ENDPOINT / COOLIFY_TOKEN alternative.
+file_endpoint="$(tfvar coolify_endpoint secrets.auto.tfvars)"
+file_token="$(tfvar coolify_token secrets.auto.tfvars)"
+COOLIFY_ENDPOINT="${file_endpoint:-${COOLIFY_ENDPOINT:-}}"
+COOLIFY_TOKEN="${file_token:-${COOLIFY_TOKEN:-}}"
+PROJECT_NAME="$(tfvar project_name production.tfvars staging.tfvars)"
+
+[ -n "$COOLIFY_ENDPOINT" ] || die "coolify_endpoint not set in secrets.auto.tfvars (or COOLIFY_ENDPOINT in the environment)"
+[ -n "$COOLIFY_TOKEN" ]    || die "coolify_token not set in secrets.auto.tfvars (or COOLIFY_TOKEN in the environment)"
+[ -n "$PROJECT_NAME" ]     || die "project_name not set in production.tfvars"
+
+# Hand the resolved values to tofu too — the root variables are required, and
+# TF_VAR_* sits below *.auto.tfvars in tofu's precedence, so this is a no-op when
+# the file provides them and exactly the fallback when only the env does.
+export TF_VAR_coolify_endpoint="$COOLIFY_ENDPOINT"
+export TF_VAR_coolify_token="$COOLIFY_TOKEN"
+
+# Fail fast: is the Coolify API reachable with this token?
+PROJECTS_JSON="$(curl -fsS --max-time 15 \
+  -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
+  "${COOLIFY_ENDPOINT%/}/api/v1/projects")" \
+  || die "Coolify API not reachable at ${COOLIFY_ENDPOINT} — check coolify_endpoint / coolify_token in secrets.auto.tfvars (or COOLIFY_ENDPOINT / COOLIFY_TOKEN in the environment)"
+
+# Does a project with our name already exist? (php is always present in this container)
+PROJECT_EXISTS="$(printf '%s' "$PROJECTS_JSON" | php -r '
+  $projects = json_decode(stream_get_contents(STDIN), true);
+  foreach ((array) $projects as $p) {
+      if (($p["name"] ?? null) === $argv[1]) { echo "yes"; return; }
+  }' "$PROJECT_NAME")"
+
+echo "Initializing OpenTofu ..."
+tofu init -input=false >/dev/null
+
+# "Bootstrapped" = the local state actually tracks resources. (A state file left
+# over from a completed destroy is empty and counts as NOT bootstrapped.)
+STATE_RESOURCES="$( (tofu state list 2>/dev/null || true) | wc -l )"
+
+if [ "$ACTION" = "destroy" ]; then
+  [ "$STATE_RESOURCES" -gt 0 ] || die "no local state with resources — nothing to destroy from this machine.
+A live environment without local state is managed (and deleted) via the Coolify UI."
+  echo "Destroying the \"${PROJECT_NAME}\" stack (production + staging) on Coolify."
+  echo "tofu will ask for a final 'yes' after showing the destroy plan."
+  tofu destroy "${VAR_FILES[@]}"
+  cat <<'EOF'
+
+Teardown finished. Coolify sometimes leaves orphaned containers behind (they
+keep their Traefik labels and can keep serving a domain) — check the host with
+`docker ps` and remove leftovers with `docker rm -f <name>`.
+EOF
+  exit 0
+fi
+
+# ---- up ------------------------------------------------------------------
+
+if [ "$STATE_RESOURCES" -eq 0 ]; then
+  if [ "$PROJECT_EXISTS" = "yes" ]; then
+    die "a Coolify project named \"${PROJECT_NAME}\" already exists.
+That environment is live and managed via the Coolify UI — re-running bootstrap
+would create a DUPLICATE stack next to it. If you really are setting up a new
+environment, change project_name in production.tfvars first."
+  fi
+else
+  echo "WARNING: already bootstrapped (${STATE_RESOURCES} resources in local state)."
+  echo "Re-applying will OVERWRITE any env-var changes made in the Coolify UI since"
+  echo "bootstrap (the provider pushes env vars write-only — it cannot see UI changes)."
+  read -r -p "Continue anyway? [y/N] " REPLY
+  case "$REPLY" in [Yy]|[Yy][Ee][Ss]) ;; *) echo "Aborted."; exit 1 ;; esac
+fi
+
+tofu validate >/dev/null
+
+PLAN_FILE="$(mktemp)"
+trap 'rm -f "$PLAN_FILE"' EXIT
+
+echo "Planning (this talks to the Coolify API and can take a minute) ..."
+tofu plan -input=false -out="$PLAN_FILE" "${VAR_FILES[@]}"
+
+echo
+read -r -p "Proceed and create the stack shown above? [y/N] " REPLY
+case "$REPLY" in [Yy]|[Yy][Ee][Ss]) ;; *) echo "Aborted — nothing was created."; exit 1 ;; esac
+
+tofu apply -input=false "$PLAN_FILE"
+
+cat <<'EOF'
+
+================================================================================
+Bootstrap complete.
+================================================================================
+
+One-time manual steps (not expressible via the Coolify API) — run on each
+Coolify HOST as root:
+
+ 1. Log dirs — the container user (UID 82) must be able to write
+    (once per environment: production, staging):
+      mkdir -p /data/shopware/<env>/var/log && chown -R 82:82 /data/shopware/<env>/var/log
+
+ 2. Staging basic-auth — create the .htpasswd (the hash never enters repo/image):
+      mkdir -p /data/shopware/staging/auth
+      htpasswd -nbB <user> '<password>' > /data/shopware/staging/auth/.htpasswd
+      chown -R 82:82 /data/shopware/staging/auth
+
+ 3. DB/Redis tuning — set my.cnf / redis.conf in the Coolify UI (Coolify rejects
+    the provider's update; intended values live in the mariadb_conf/redis_conf
+    tfvars).
+
+ 4. Elasticsearch (after the first successful deploy, per env with ES enabled):
+      bin/console es:index && bin/console es:admin:index
+    then redeploy the workers so they pick up the ES env.
+
+ 5. First-deploy quirk: if the storefront loads unstyled right after the very
+    FIRST deploy (403 on theme/<hash>/css/all.css), a page was cached
+    mid-install pointing at a theme path that never got files. It self-heals
+    once the cache-invalidation scheduled task runs (workers up, <= 5 min) —
+    or fix immediately in the web container:
+      bin/console theme:compile --active-only
+
+--------------------------------------------------------------------------------
+From now on the COOLIFY UI is the single source of truth for this environment.
+Do NOT run this bootstrap again against it — a re-apply overwrites UI changes.
+
+Archive these two files somewhere safe (password manager / vault), then delete
+them from this machine:
+
+  infra/secrets.auto.tfvars   <- app_secret / instance_id exist ONLY here
+  infra/tofu.tfstate          <- recovery record (spares per-resource tofu import)
+================================================================================
+EOF
