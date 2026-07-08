@@ -2,8 +2,8 @@
 #ddev-generated
 
 ## Description: One-shot bootstrap of the Shopware stack on Coolify (OpenTofu under the hood)
-## Usage: coolify-bootstrap [init|up|destroy]
-## Example: ddev coolify-bootstrap init
+## Usage: coolify-bootstrap [init|up|destroy] [production|staging]
+## Example: ddev coolify-bootstrap up staging
 
 # Provisions the full production + staging Shopware stack on Coolify ONCE ("up"),
 # or tears a trial run down again ("destroy"). OpenTofu is an implementation
@@ -30,13 +30,17 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 
 usage() {
   cat <<'EOF'
-Usage: ddev coolify-bootstrap [init|up|destroy]
+Usage: ddev coolify-bootstrap [init|up|destroy] [production|staging]
 
   init     scaffold infra/ from the bundled templates (fresh projects only;
-           refuses if infra/ already exists).
-  up       provision the full stack on Coolify (default). Strictly one-shot:
+           refuses if infra/ already exists). Takes no environment argument.
+  up       provision the stack on Coolify (default). Strictly one-shot:
            refuses to run against an environment that already exists.
   destroy  tear the stack down again (requires the local state written by "up").
+
+With an environment argument, up/destroy operate on that environment only.
+Shared resources (the Coolify project, the S3 CORS rule) are created by any
+per-env "up" but only removed by a full (no-argument) "destroy".
 EOF
 }
 
@@ -46,6 +50,16 @@ case "$ACTION" in
   -h|--help|help) usage; exit 0 ;;
   *) usage >&2; exit 1 ;;
 esac
+
+# Optional environment scope for up/destroy. init never takes one.
+ENV="${2:-}"
+case "$ENV" in
+  ""|production|staging) ;;
+  *) usage >&2; exit 1 ;;
+esac
+if [ "$ACTION" = "init" ] && [ -n "$ENV" ]; then
+  usage >&2; exit 1
+fi
 
 # ---- init (scaffold infra/ from the add-on's bundled templates) ------------
 
@@ -76,6 +90,23 @@ One-shot contract: once "up" succeeds, the Coolify UI is the single source of
 truth — never re-run the bootstrap against the live environment.
 EOF
   exit 0
+fi
+
+# Per-environment target sets. The scaffold fixes this layout (module names and
+# the shared root resources), so the addresses can be hardcoded. CORS is included
+# in every per-env "up" ON PURPOSE: it is a root resource that -target=module.*
+# would skip, and a stale CORS origin breaks storefront fonts. Shared resources
+# (project, CORS) are never destroyed per-env — only a full destroy removes them.
+TARGETS=()
+if [ -n "$ENV" ]; then
+  if [ "$ACTION" = "up" ]; then
+    TARGETS=(-target=coolify_project.shopware -target="module.$ENV" -target=aws_s3_bucket_cors_configuration.public)
+  else
+    TARGETS=(-target="module.$ENV")
+  fi
+  if [ "$ENV" = "staging" ]; then
+    TARGETS+=(-target=coolify_environment.staging)
+  fi
 fi
 
 cd "$INFRA_DIR" 2>/dev/null || die "infra directory not found: $INFRA_DIR"
@@ -131,16 +162,31 @@ PROJECT_EXISTS="$(printf '%s' "$PROJECTS_JSON" | php -r '
 echo "Initializing OpenTofu ..."
 tofu init -input=false >/dev/null
 
-# "Bootstrapped" = the local state actually tracks resources. (A state file left
-# over from a completed destroy is empty and counts as NOT bootstrapped.)
-STATE_RESOURCES="$( (tofu state list 2>/dev/null || true) | wc -l )"
+# "Bootstrapped" = the local state actually tracks resources — scoped to one
+# environment's module when an env argument was given. (A state file left over
+# from a completed destroy is empty and counts as NOT bootstrapped; so does an
+# env whose module has no resources yet.)
+STATE_SCOPE="${ENV:+module.$ENV}"
+TOTAL_RESOURCES="$( (tofu state list 2>/dev/null || true) | wc -l )"
+if [ -n "$STATE_SCOPE" ]; then
+  SCOPED_RESOURCES="$( (tofu state list "$STATE_SCOPE" 2>/dev/null || true) | wc -l )"
+else
+  SCOPED_RESOURCES="$TOTAL_RESOURCES"
+fi
 
 if [ "$ACTION" = "destroy" ]; then
-  [ "$STATE_RESOURCES" -gt 0 ] || die "no local state with resources — nothing to destroy from this machine.
+  [ "$SCOPED_RESOURCES" -gt 0 ] || die "no local state with resources${ENV:+ for environment '$ENV'} — nothing to destroy from this machine.
 A live environment without local state is managed (and deleted) via the Coolify UI."
-  echo "Destroying the \"${PROJECT_NAME}\" stack (production + staging) on Coolify."
+  if [ -n "$ENV" ]; then
+    echo "Destroying environment '$ENV' of the \"${PROJECT_NAME}\" stack on Coolify."
+  else
+    echo "Destroying the \"${PROJECT_NAME}\" stack (production + staging) on Coolify."
+  fi
+  if [ -n "$ENV" ]; then
+    echo "Shared resources (Coolify project, S3 CORS rule) are kept — only a full destroy removes them."
+  fi
   echo "tofu will ask for a final 'yes' after showing the destroy plan."
-  tofu destroy "${VAR_FILES[@]}"
+  tofu destroy "${TARGETS[@]}" "${VAR_FILES[@]}"
   cat <<'EOF'
 
 Teardown finished. Coolify sometimes leaves orphaned containers behind (they
@@ -152,15 +198,15 @@ fi
 
 # ---- up ------------------------------------------------------------------
 
-if [ "$STATE_RESOURCES" -eq 0 ]; then
-  if [ "$PROJECT_EXISTS" = "yes" ]; then
+if [ "$SCOPED_RESOURCES" -eq 0 ]; then
+  if [ "$PROJECT_EXISTS" = "yes" ] && [ "$TOTAL_RESOURCES" -eq 0 ]; then
     die "a Coolify project named \"${PROJECT_NAME}\" already exists.
 That environment is live and managed via the Coolify UI — re-running bootstrap
 would create a DUPLICATE stack next to it. If you really are setting up a new
 environment, change project_name in production.tfvars first."
   fi
 else
-  echo "WARNING: already bootstrapped (${STATE_RESOURCES} resources in local state)."
+  echo "WARNING: ${ENV:+environment '$ENV' }already bootstrapped (${SCOPED_RESOURCES} resources in local state)."
   echo "Re-applying will OVERWRITE any env-var changes made in the Coolify UI since"
   echo "bootstrap (the provider pushes env vars write-only — it cannot see UI changes)."
   read -r -p "Continue anyway? [y/N] " REPLY
@@ -172,8 +218,8 @@ tofu validate >/dev/null
 PLAN_FILE="$(mktemp)"
 trap 'rm -f "$PLAN_FILE"' EXIT
 
-echo "Planning (this talks to the Coolify API and can take a minute) ..."
-tofu plan -input=false -out="$PLAN_FILE" "${VAR_FILES[@]}"
+echo "Planning ${ENV:+environment '$ENV' }(this talks to the Coolify API and can take a minute) ..."
+tofu plan -input=false -out="$PLAN_FILE" "${TARGETS[@]}" "${VAR_FILES[@]}"
 
 echo
 read -r -p "Proceed and create the stack shown above? [y/N] " REPLY

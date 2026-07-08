@@ -1,7 +1,7 @@
 name: coolify-bootstrap
 repository: vanWittlaer/ddev-coolify-bootstrap
-version: v1.0.2
-install_date: "2026-07-08T16:51:46+02:00"
+version: v1.1.0
+install_date: "2026-07-08T21:23:01+02:00"
 project_files:
     - web-build/Dockerfile.opentofu
     - commands/web/coolify-bootstrap
