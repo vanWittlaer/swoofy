@@ -42,8 +42,9 @@ resource, so the shared env (`local.shared_env`) is fanned out per resource.
   needs an image rebuild, not a re-provision. The build stage must be PHP 8.4
   (`shopware/docker/Dockerfile`) to match the lock/runtime.
 - **S3 buckets** already created (public bucket must serve objects **public-read**).
-- **ddev running** (`ddev start`) — OpenTofu and curl are baked into the web container
-  (`.ddev/web-build/Dockerfile.opentofu`); you never invoke `tofu` yourself.
+- **ddev running** (`ddev start`) — OpenTofu and the bootstrap command come from the
+  [`ddev-coolify-bootstrap`](https://github.com/vanWittlaer/ddev-coolify-bootstrap) add-on
+  (`ddev add-on get vanWittlaer/ddev-coolify-bootstrap`); you never invoke `tofu` yourself.
 
 See `PREREQUISITES.md` for the detailed walk-through.
 

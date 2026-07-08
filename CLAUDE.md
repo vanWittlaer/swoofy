@@ -38,7 +38,7 @@ Custom ddev commands (defined in `.ddev/commands/`):
 - `ddev shopware-cli ...` — shopware-cli inside the container
 - `ddev claude` — Claude Code inside the web container
 
-Watchers target **Shopware 6.7.4.2+** (Vite-based). Add-ons in use: Redis, RedisCommander, RabbitMQ, ElasticSearch, plus the `claude-code` and `shopware-cli` add-ons.
+Watchers target **Shopware 6.7.4.2+** (Vite-based). Add-ons in use: Redis, RedisCommander, RabbitMQ, ElasticSearch, plus the `claude-code`, `shopware-cli` and `coolify-bootstrap` (delivers OpenTofu + the `ddev coolify-bootstrap` command) add-ons.
 
 Two ddev behaviors worth knowing before they surprise you:
 - **`config.hooks.yaml` rewrites an imported DB**: `post-import-db` rewrites sales-channel domains from `LEGACY_APP_URL` to the ddev URL, clears mailer config, and runs the deployment helper. Editing the legacy URL there matters when importing dumps from a different host.
