@@ -1,6 +1,16 @@
 {
   "enabledPlugins": {
-    "terraform@claude-plugins-official": true,
+    "terraform@claude-plugins-official": false,
     "superpowers@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(tofu validate *)",
+      "Bash(tofu plan *)",
+      "Bash(tofu init *)",
+      "Bash(tofu providers)",
+      "Bash(tofu version)",
+      "Bash(git check-ignore *)"
+    ]
   }
 }
