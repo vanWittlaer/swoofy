@@ -1,3 +1,4 @@
+#ddev-generated
 # Per-environment settings (non-secret). Filled in by you after `ddev coolify-bootstrap init`.
 # project_name must stay in THIS file — the bootstrap command reads it from production.tfvars.
 
@@ -34,6 +35,9 @@ production = {
     s3_backup_path   = "production"
   }
 
+  # Applied via the Coolify UI post-bootstrap, NOT by `up` — the provider can't push DB tuning
+  # on this Coolify version (422 on the extended-fields update), so the module keeps these as
+  # the intended config and you paste them into the UI. See the post-bootstrap checklist.
   # innodb_buffer_pool_size is the one host-specific knob — size it to your DB server's RAM.
   # The rest are Shopware-recommended defaults (large GROUP_CONCAT, strict sql_mode).
   mariadb_conf = <<-CNF

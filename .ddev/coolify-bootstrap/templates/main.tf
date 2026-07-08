@@ -1,3 +1,4 @@
+#ddev-generated
 resource "coolify_project" "shopware" {
   name        = var.project_name
   description = var.project_description

@@ -1,8 +1,13 @@
+#ddev-generated
 terraform {
   required_version = ">= 1.7.0"
 
-  # This is an EXAMPLE consuming the module at ../../ — no state backend is configured here.
-  # In a real deployment, add a `backend` block (see the module's STATE.md guidance).
+  # State lives in a LOCAL file (tofu.tfstate, not the default terraform.tfstate) — the
+  # one-shot bootstrap model: provision once, then archive this file off-machine and delete
+  # it locally (see STATE.md in the module repo). It holds secrets in plaintext.
+  backend "local" {
+    path = "tofu.tfstate"
+  }
 
   required_providers {
     coolify = {

@@ -50,7 +50,7 @@ esac
 # ---- init (scaffold infra/ from the add-on's bundled templates) ------------
 
 if [ "$ACTION" = "init" ]; then
-  [ ! -e "$INFRA_DIR" ] || die "infra directory already exists: $INFRA_DIR — init only scaffolds fresh projects.
+  { [ ! -e "$INFRA_DIR" ] && [ ! -L "$INFRA_DIR" ]; } || die "infra directory already exists: $INFRA_DIR — init only scaffolds fresh projects.
 To bootstrap an existing config, run: ddev coolify-bootstrap up"
   [ -d "$TEMPLATES_DIR" ] || die "templates not found: $TEMPLATES_DIR (re-install the ddev-coolify-bootstrap add-on?)"
 
@@ -58,6 +58,10 @@ To bootstrap an existing config, run: ddev coolify-bootstrap up"
   cp -R "$TEMPLATES_DIR/." "$INFRA_DIR/"
   mv "$INFRA_DIR/gitignore" "$INFRA_DIR/.gitignore"
   sed -i "s|__TCSS_VERSION__|${TCSS_VERSION}|g" "$INFRA_DIR/main.tf"
+  # The templates carry ddev's #ddev-generated ownership marker so `ddev add-on get`
+  # can update them in .ddev/ on upgrades — but the marker must not leak into the
+  # user's scaffolded infra/ files.
+  find "$INFRA_DIR" -maxdepth 1 -type f -exec sed -i '1{/^#ddev-generated$/d}' {} +
 
   cat <<EOF
 Scaffolded ${INFRA_DIR} (terraform-coolify-shopware-stack ${TCSS_VERSION}).

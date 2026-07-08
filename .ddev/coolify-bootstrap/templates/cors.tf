@@ -1,3 +1,4 @@
+#ddev-generated
 # CORS on the public asset bucket. The storefront (var.*.web_domain) loads theme
 # assets from the S3 origin; browsers require CORS for
 # fonts (.woff2), so without this the fonts are blocked cross-origin. The bucket is

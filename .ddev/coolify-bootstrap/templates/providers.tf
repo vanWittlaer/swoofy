@@ -1,3 +1,4 @@
+#ddev-generated
 provider "coolify" {
   endpoint = var.coolify_endpoint # or COOLIFY_ENDPOINT env var
   token    = var.coolify_token    # or COOLIFY_TOKEN env var

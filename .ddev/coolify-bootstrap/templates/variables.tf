@@ -1,3 +1,4 @@
+#ddev-generated
 # --- Coolify connection -------------------------------------------------------
 
 variable "coolify_endpoint" {
