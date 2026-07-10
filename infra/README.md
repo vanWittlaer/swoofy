@@ -43,8 +43,9 @@ resource, so the shared env (`local.shared_env`) is fanned out per resource.
   (`shopware/docker/Dockerfile`) to match the lock/runtime.
 - **S3 buckets** already created (public bucket must serve objects **public-read**).
 - **ddev running** (`ddev start`) — OpenTofu and the bootstrap command come from the
-  [`ddev-coolify-bootstrap`](https://github.com/vanWittlaer/ddev-coolify-bootstrap) add-on
-  (`ddev add-on get vanWittlaer/ddev-coolify-bootstrap`); you never invoke `tofu` yourself.
+  [`ddev-coolify-shopware`](https://github.com/vanWittlaer/ddev-coolify-shopware) add-on
+  (`ddev add-on get vanWittlaer/ddev-coolify-shopware`); you never invoke `tofu` yourself.
+  (The command it installs stays `ddev coolify-bootstrap`; only the add-on repo was renamed.)
 
 See `PREREQUISITES.md` for the detailed walk-through.
 
