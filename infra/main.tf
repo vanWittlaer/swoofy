@@ -11,7 +11,7 @@ resource "coolify_environment" "staging" {
 }
 
 module "production" {
-  source           = "github.com/vanWittlaer/terraform-coolify-shopware-stack?ref=v0.6.0"
+  source           = "github.com/vanWittlaer/terraform-coolify-shopware-stack?ref=v0.6.1"
   environment_name = "production"
   project_uuid     = coolify_project.shopware.uuid
   server_uuid      = var.secrets_production.server_uuid
@@ -38,15 +38,14 @@ module "production" {
   static_env    = merge(var.static_env, var.production.static_env)
   log_host_base = var.log_host_base
   # enable_basic_auth defaults false — production runs the final-prod image (no basic-auth layer)
-  mariadb_public_port = 4306
-  rabbitmq_mgmt_port  = 25672
-  s3                  = var.production.s3
-  mailer_dsn          = var.secrets_production.mailer_dsn # production: real SMTP (secret)
-  secrets             = var.secrets_production
+  rabbitmq_mgmt_port = 25672
+  s3                 = var.production.s3
+  mailer_dsn         = var.secrets_production.mailer_dsn # production: real SMTP (secret)
+  secrets            = var.secrets_production
 }
 
 module "staging" {
-  source           = "github.com/vanWittlaer/terraform-coolify-shopware-stack?ref=v0.6.0"
+  source           = "github.com/vanWittlaer/terraform-coolify-shopware-stack?ref=v0.6.1"
   environment_name = "staging"
   project_uuid     = coolify_project.shopware.uuid
   server_uuid      = var.secrets_staging.server_uuid
@@ -72,13 +71,12 @@ module "staging" {
   backup_image         = var.backup_image
   backup_image_tag     = var.backup_image_tag
 
-  static_env          = merge(var.static_env, var.staging.static_env)
-  log_host_base       = var.log_host_base
-  enable_basic_auth   = true # staging runs the final-protected image (nginx basic-auth)
-  mariadb_public_port = 5306
-  rabbitmq_mgmt_port  = 35672
-  s3                  = var.staging.s3
-  secrets             = var.secrets_staging
+  static_env         = merge(var.static_env, var.staging.static_env)
+  log_host_base      = var.log_host_base
+  enable_basic_auth  = true # staging runs the final-protected image (nginx basic-auth)
+  rabbitmq_mgmt_port = 35672
+  s3                 = var.staging.s3
+  secrets            = var.secrets_staging
 
   depends_on = [coolify_environment.staging]
 }
