@@ -37,7 +37,7 @@ module "production" {
 
   static_env    = merge(var.static_env, var.production.static_env)
   log_host_base = var.log_host_base
-  # enable_basic_auth defaults false — production runs the final-prod image (no basic-auth layer)
+  # enable_basic_auth defaults false — no .htpasswd mount; the prod host isn't in the image's auth gate, so the storefront is open
   rabbitmq_mgmt_port = 25672
   s3                 = var.production.s3
   mailer_dsn         = var.secrets_production.mailer_dsn # production: real SMTP (secret)
@@ -73,7 +73,7 @@ module "staging" {
 
   static_env         = merge(var.static_env, var.staging.static_env)
   log_host_base      = var.log_host_base
-  enable_basic_auth  = true # staging runs the final-protected image (nginx basic-auth)
+  enable_basic_auth  = true # provides the /var/www/auth/.htpasswd bind mount; the single web image gates auth on the staging host (see shopware/docker/nginx/basic-auth.conf)
   rabbitmq_mgmt_port = 35672
   s3                 = var.staging.s3
   secrets            = var.secrets_staging

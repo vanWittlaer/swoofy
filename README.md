@@ -62,9 +62,11 @@ inside the ddev web container with `composer require shopware/docker`; it genera
 it with a multi-stage split:
 
 - **`final-prod`** — the base image plus custom nginx snippets (`shopware/docker/nginx`:
-  real-IP from the proxy, redirects, a prohibitive `robots.txt`). Used for production.
-- **`final-protected`** — `final-prod` plus HTTP basic-auth (`shopware/docker/nginx-basic-auth`).
-  Used for staging/feature so non-prod hosts sit behind a login.
+  real-IP from the proxy, redirects, a prohibitive `robots.txt`, and host-gated HTTP
+  basic-auth). A **single image for every environment**: basic-auth only challenges the
+  host(s) listed in the `$auth_host_gate` map (`basic-auth.conf`) — typically the staging
+  storefront — so non-prod hosts sit behind a login while production stays open. The gated
+  host must have its `.htpasswd` bind-mounted (see [infra](infra/README.md)).
 
 The image is **built in CI** (see [CI/CD](#cicd)) and pushed to a registry — the OpenTofu
 stack deploys it by reference, it is not built on the server.
@@ -221,8 +223,8 @@ Two equivalent pipelines **build the image → trigger a Coolify deploy webhook*
 | `feature/**` | staging     | build only                | build only        |
 
 - **GitHub** (`.github/workflows/ci-cd.yml`) is primary and runs automatically on push,
-  pushing images to **ghcr.io**. `main` builds the `final-prod` image, `develop`/`feature`
-  the `final-protected` (basic-auth) image.
+  pushing images to **ghcr.io**. All branches build the same `final-prod` image; basic-auth
+  on non-prod hosts is gated inside that image by host, not by a separate build target.
 - **GitLab** (`.gitlab-ci.yml`) is an equivalent manual alternative, pushing to the GitLab
   registry.
 - **Post-deploy command** on the server:

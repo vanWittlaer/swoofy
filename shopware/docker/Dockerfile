@@ -35,7 +35,3 @@ RUN mkdir -p /etc/nginx/conf.d && chown -R www-data:www-data /etc/nginx/conf.d
 USER 82
 
 COPY --chown=82 ./docker/nginx /etc/nginx/conf.d
-
-FROM final-prod AS final-protected
-
-COPY --chown=82 ./docker/nginx-basic-auth /etc/nginx/conf.d

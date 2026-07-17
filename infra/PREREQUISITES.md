@@ -87,17 +87,19 @@ The provider can't express these; do them once per env after the resources exist
        mkdir -p <log_host_base>/<env>/var/log && chown -R 82:82 <log_host_base>/<env>/var/log
        ```
 2. [ ] **Basic-auth `.htpasswd`** (envs with `enable_basic_auth = true`, typically staging) —
-       HTTP basic-auth is a **Shopware-image** feature, not a tofu one: the `final-protected`
-       build stage bakes an nginx snippet (`shopware/docker/nginx-basic-auth/basic-auth.inc`)
-       whose `auth_basic_user_file` sets the container path **`/var/www/auth/.htpasswd`**. Tofu's
-       only role is the bind mount of `<log_host_base>/<env>/auth` → the container's `/var/www/auth`.
+       HTTP basic-auth is a **Shopware-image** feature, not a tofu one. The single web image
+       always ships the nginx snippet (`shopware/docker/nginx/basic-auth.conf`/`.inc`), which
+       challenges only the host(s) listed in its `$auth_host_gate` map (bake your protected
+       FQDN there) and reads the container path **`/var/www/auth/.htpasswd`**. Tofu's only role
+       is the bind mount of `<log_host_base>/<env>/auth` → the container's `/var/www/auth`.
        Create the file on the host so the hash never enters the repo/image:
        ```bash
        mkdir -p <log_host_base>/<env>/auth
        htpasswd -nbB <user> '<pw>' > <log_host_base>/<env>/auth/.htpasswd
        chown -R 82:82 <log_host_base>/<env>/auth
        ```
-       (The env must also run the `final-protected` image target for the snippet to be present.)
+       (Any host switched "on" in `$auth_host_gate` **must** have this mount, or nginx 500s
+       when the challenge fires. Hosts not in the gate never open the file.)
 3. [ ] **DB / Redis tuning in the Coolify UI** — `mariadb_conf` / `redis_conf` are set to `null`
        in `databases.tf` because Coolify 4.1.2 rejects the provider's extended-fields update.
        Set `my.cnf` / `redis.conf` in the Coolify UI if you need tuning.

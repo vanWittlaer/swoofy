@@ -21,7 +21,7 @@ the module's
 
 | Resource | tofu type | Notes |
 |---|---|---|
-| `web` | `coolify_application_docker_image` | nginx+php-fpm on :8000, storefront domain, health check `/api/_info/health-check`, post-deploy runs the deployment-helper (install/migrate). Staging runs the `final-protected` image (HTTP basic-auth) + a `.htpasswd` bind mount |
+| `web` | `coolify_application_docker_image` | nginx+php-fpm on :8000, storefront domain, health check `/api/_info/health-check`, post-deploy runs the deployment-helper (install/migrate). One image for all envs; HTTP basic-auth is gated by host in the baked nginx config, with the `.htpasswd` bind-mounted where `enable_basic_auth = true` (staging) |
 | `workers` | `coolify_service` (`docker_compose_raw`) | **one service, 3 containers**: `worker-1`, `worker-2` (`messenger:consume`), `scheduler` (`scheduled-task:run`) |
 | `mariadb`, `redis-cache`, `redis-session` | `coolify_database_*` | DSNs read from each resource's computed `internal_db_url`; Symfony lock uses the DB |
 | `rabbitmq`, `elasticsearch` | `coolify_service` (`docker_compose_raw`) | internal-only; elasticsearch per-env via `enable_elasticsearch` (on for prod + staging) |
@@ -143,10 +143,11 @@ Printed by the command after a successful apply; also listed here. On each Cooli
 
 - **`chown` the log dir** so the container user (UID 82) can write:
   `mkdir -p /data/shopware/<env>/var/log && chown -R 82:82 /data/shopware/<env>/var/log`.
-- **Staging basic-auth `.htpasswd`** — the staging `final-protected` image serves the storefront
-  behind HTTP basic-auth, reading `/var/www/auth/.htpasswd` from a host bind mount
-  (`basic_auth_host_path`, wired in `main.tf` to `<log_host_base>/staging/auth`). Create it on
-  the host so the hash never enters the repo/image:
+- **Staging basic-auth `.htpasswd`** — the single web image gates HTTP basic-auth by host
+  (`$auth_host_gate` in `shopware/docker/nginx/basic-auth.conf` lists the staging FQDN); on a
+  gated host nginx reads `/var/www/auth/.htpasswd` from a host bind mount (`basic_auth_host_path`,
+  wired in `main.tf` to `<log_host_base>/staging/auth`, provisioned when `enable_basic_auth = true`).
+  Create it on the host so the hash never enters the repo/image:
   `mkdir -p /data/shopware/staging/auth && htpasswd -nbB <user> '<pw>' > /data/shopware/staging/auth/.htpasswd && chown -R 82:82 /data/shopware/staging/auth`.
 - **DB tuning** (`mariadb_conf` / `redis_conf`) is disabled in the module — Coolify 4.1.2
   rejects the provider's extended-fields update; set `my.cnf` / `redis.conf` in the Coolify UI.
