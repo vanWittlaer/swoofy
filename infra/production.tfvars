@@ -76,4 +76,4 @@ production = {
 # (github.com/vanwittlaer/shopware-ops-shell). One tag serves both environments; pin a
 # released vX.Y.Z tag here for production instead of "latest" once the repo cuts a release.
 backup_image     = "ghcr.io/vanwittlaer/shopware-ops-shell"
-backup_image_tag = "v1.1.0"
+backup_image_tag = "v1.1.1"
