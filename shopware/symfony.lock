@@ -125,7 +125,7 @@
             "repo": "github.com/shopware/recipes",
             "branch": "main",
             "version": "6.7",
-            "ref": "512a94282164f74f7548d0915cbcd1cfd365f055"
+            "ref": "57c2b5ee457324b5058ba58e059879cb0013d584"
         },
         "files": [
             "bin/build-storefront.sh",
