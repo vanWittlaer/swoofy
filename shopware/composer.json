@@ -7,6 +7,7 @@
     "frosh/tools": "^3.1",
     "league/flysystem-async-aws-s3": "^3.31",
     "shopware/administration": "*",
+    "shopware/conflicts": "^0.6.1",
     "shopware/core": "~v6.7.1",
     "shopware/deployment-helper": "^0.0.27",
     "shopware/docker": "^0.3.0",
