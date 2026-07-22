@@ -75,7 +75,7 @@
             "repo": "github.com/shopware/recipes",
             "branch": "main",
             "version": "6.7",
-            "ref": "3a9e7f8428dbada09530cb35bf072303e108e597"
+            "ref": "c12a7be330139d3243d646b93d9ae4059937d3b2"
         },
         "files": [
             "bin/.htaccess",
@@ -92,8 +92,8 @@
             "public/.htaccess.dist",
             "public/index.php",
             "public/maintenance.html",
-            "var/.htaccess",
-            ".htaccess"
+            ".htaccess",
+            "var/.htaccess"
         ]
     },
     "shopware/docker": {
