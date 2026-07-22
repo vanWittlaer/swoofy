@@ -62,7 +62,7 @@
             "repo": "github.com/shopware/recipes",
             "branch": "main",
             "version": "6.7",
-            "ref": "914662662f5398fda649a2da578da202c3b50dac"
+            "ref": "7d5280ce8dec70221eee408927b118dbe9bbc30f"
         },
         "files": [
             "bin/build-administration.sh",
