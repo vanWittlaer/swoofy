@@ -6,8 +6,8 @@ xdebug_enabled: false
 additional_hostnames: []
 additional_fqdns: []
 database:
-    type: mysql
-    version: "8.0"
+    type: mariadb
+    version: "11.8"
 working_dir:
     web: /var/www/html/shopware
 use_dns_when_possible: true
