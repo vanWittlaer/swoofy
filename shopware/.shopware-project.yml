@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/shopware/shopware-cli/main/internal/shop/config_schema.json
+#
+# shopware-cli project configuration (read by `shopware-cli project ci` during the
+# Docker image build — see docker/Dockerfile).
+#
+# force_extension_build: rebuild these extensions in CI instead of using the
+# compiled assets shipped in their composer dist. Their releases ship admin JS
+# under STABLE, UNHASHED filenames (e.g. /bundles/froshtools/administration/js/
+# frosh-tools.js — standard `shopware-cli extension build` output, kept unhashed
+# for pre-6.7 compatibility). The stock shopware/docker nginx serves /bundles/
+# with `expires 1y`, so after a plugin update every returning admin browser keeps
+# executing the year-cached old bundle (hard reload does not bust dynamically
+# imported plugin bundles; incident 2026-07-23, frosh/tools 3.9.0 -> 3.11.1).
+#
+# Rebuilding with a current shopware-cli emits an additional content-HASHED
+# admin bundle and points .vite/entrypoints.json at it, so every plugin release
+# gets a fresh URL and cache staleness is structurally impossible.
+#
+# An entry can be dropped once the plugin itself ships hashed assets (built with
+# a recent shopware-cli): check its tag for
+# src/Resources/public/administration/js/<name>-<hash>.js.
+build:
+  force_extension_build:
+    - name: FroshTools
+    - name: FroshAltchaCaptcha
