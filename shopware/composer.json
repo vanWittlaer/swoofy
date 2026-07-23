@@ -19,6 +19,11 @@
   },
   "repositories": [
     {
+      "name": "shopware-conflicts",
+      "type": "composer",
+      "url": "https://shopware.github.io/conflicts/"
+    },
+    {
       "type": "path",
       "url": "custom/plugins/*",
       "options": {
