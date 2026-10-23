@@ -1,4 +1,4 @@
-type: php
+type: shopware6
 docroot: shopware/public
 php_version: "8.4"
 webserver_type: nginx-fpm
@@ -14,7 +14,7 @@ use_dns_when_possible: true
 composer_root: shopware
 composer_version: "2"
 disable_settings_management: true
-webimage_extra_packages: [ php8.3-amqp ]
+webimage_extra_packages: [ 'php${DDEV_PHP_VERSION}-amqp' ]
 web_environment:
     - APP_ENV=dev
 corepack_enable: false
